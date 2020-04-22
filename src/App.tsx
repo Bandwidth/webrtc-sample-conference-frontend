@@ -93,7 +93,7 @@ const App: React.FC = () => {
             </Route>
             <Route
               exact
-              path="/conferences/:conferenceId"
+              path="/:slug"
               children={
                 <Grid item xs={12}>
                   <Conference />
