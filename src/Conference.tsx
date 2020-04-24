@@ -17,8 +17,6 @@ import Welcome from "./Welcome";
 import { randomBrandColorFromString } from "./Utils";
 
 const bandwidthRtc = new BandwidthRtc();
-const backendUrl = "";
-const phoneNumber = process.env.REACT_APP_PHONE_NUMBER;
 
 const useStyles = makeStyles((theme) => ({
   conference: {
@@ -223,6 +221,7 @@ const Conference: React.FC = (props) => {
   const [conferenceId, setConferenceId] = useState<string>();
   const [participantId, setParticipantId] = useState<string>();
   const [deviceToken, setDeviceToken] = useState<string>();
+  const [phoneNumber, setPhoneNumber] = useState<string>();
   const [remoteStreams, setRemoteStreams] = useState<{
     [key: string]: RtcStream;
   }>({});
@@ -236,16 +235,13 @@ const Conference: React.FC = (props) => {
 
   useEffect(() => {
     async function createParticipant(slug: string) {
-      const response = await fetch(
-        `${backendUrl}/conferences/${slug}/participants`,
-        {
-          method: "POST",
-          body: JSON.stringify({ name: "" }),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`/conferences/${slug}/participants`, {
+        method: "POST",
+        body: JSON.stringify({ name: "" }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
       if (!response.ok) {
         const error = await response.text();
         throw new Error(
@@ -262,10 +258,12 @@ const Conference: React.FC = (props) => {
           const conferenceId = responseBody.conferenceId;
           const participantId = responseBody.participantId;
           const deviceToken = responseBody.deviceToken;
+          const phoneNumber = responseBody.phoneNumber;
 
           setConferenceId(conferenceId);
           setParticipantId(participantId);
           setDeviceToken(deviceToken);
+          setPhoneNumber(phoneNumber);
 
           let options: any = {};
           if (responseBody.websocketUrl) {
