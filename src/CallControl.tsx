@@ -5,19 +5,21 @@ import {
   Mic,
   MicOff,
   Videocam,
-  VideocamOff
+  VideocamOff,
+  PresentToAll,
 } from "@material-ui/icons";
 import { makeStyles } from "@material-ui/core/styles";
-import red from "@material-ui/core/colors/red";
+import { red, green } from "@material-ui/core/colors";
 
 interface CallControlProps {
   className?: string;
-  onMicEnabled?: { (muted: boolean): void };
-  onCameraEnabled?: { (muted: boolean): void };
+  onMicEnabled?: { (enabled: boolean): void };
+  onCameraEnabled?: { (enabled: boolean): void };
   onHangup?: { (): void };
+  onScreenShareEnabled?: { (enabled: boolean): void };
 }
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   callControl: {
     backgroundColor: "rgba(255, 255, 255, 0.50)",
     backdropFilter: "blur(5px)",
@@ -25,28 +27,49 @@ const useStyles = makeStyles(theme => ({
     bottom: 0,
     left: 0,
     right: 0,
+    display: "flex",
+    justifyContent: "center",
     height: "auto",
     "& button": {
-      margin: "10px"
+      margin: "10px",
     },
-    "& button:hover": {
-      color: "white",
-      backgroundColor: red["A700"]
-    },
-    display: "flex",
-    justifyContent: "center"
   },
-  pressed: {
+  redButton: {
+    "&:hover": {
+      color: "white",
+      backgroundColor: red["A700"],
+    },
+  },
+  greenButton: {
+    "&:hover": {
+      color: "white",
+      backgroundColor: green["A700"],
+    },
+  },
+  redButtonPressed: {
     color: "white",
-    backgroundColor: red["A700"]
-  }
+    backgroundColor: red["A700"],
+    "&:hover": {
+      color: "white",
+      backgroundColor: red["A700"],
+    },
+  },
+  greenButtonPressed: {
+    color: "white",
+    backgroundColor: green["A700"],
+    "&:hover": {
+      color: "white",
+      backgroundColor: red["A700"],
+    },
+  },
 }));
 
-const CallControl: React.FC<CallControlProps> = props => {
+const CallControl: React.FC<CallControlProps> = (props) => {
   const classes = useStyles();
 
   const [micEnabled, setMicEnabled] = useState(true);
   const [cameraEnabled, setCameraEnabled] = useState(true);
+  const [screenShareEnabled, setScreenShareEnabled] = useState(false);
 
   return (
     <div className={props.className}>
@@ -58,11 +81,12 @@ const CallControl: React.FC<CallControlProps> = props => {
               props.onMicEnabled(!micEnabled);
             }
           }}
-          className={micEnabled ? undefined : classes.pressed}
+          className={micEnabled ? classes.redButton : classes.redButtonPressed}
         >
           {micEnabled ? <Mic /> : <MicOff />}
         </Fab>
         <Fab
+          className={classes.redButton}
           onClick={() => {
             if (props.onHangup) {
               props.onHangup();
@@ -78,9 +102,26 @@ const CallControl: React.FC<CallControlProps> = props => {
               props.onCameraEnabled(!cameraEnabled);
             }
           }}
-          className={cameraEnabled ? undefined : classes.pressed}
+          className={
+            cameraEnabled ? classes.redButton : classes.redButtonPressed
+          }
         >
           {cameraEnabled ? <Videocam /> : <VideocamOff />}
+        </Fab>
+        <Fab
+          onClick={() => {
+            setScreenShareEnabled(!screenShareEnabled);
+            if (props.onScreenShareEnabled) {
+              props.onScreenShareEnabled(!screenShareEnabled);
+            }
+          }}
+          className={
+            !screenShareEnabled
+              ? classes.greenButton
+              : classes.greenButtonPressed
+          }
+        >
+          <PresentToAll />
         </Fab>
       </Box>
     </div>

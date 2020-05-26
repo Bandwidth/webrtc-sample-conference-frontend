@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { Redirect, useParams } from "react-router-dom";
-import { Avatar, Box } from "@material-ui/core";
+import { Box } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
-import { Close, Info, Phone } from "@material-ui/icons";
+import { Close, Info } from "@material-ui/icons";
 import moment from "moment";
 
 import BandwidthRtc, {
   SubscriptionEvent,
   RtcStream,
-  MediaType,
+  RtcOptions,
 } from "@bandwidth/webrtc-browser-sdk";
 
 import CallControl from "./CallControl";
 import DynamicGrid from "./DynamicGrid";
 import Welcome from "./Welcome";
-import { randomBrandColorFromString } from "./Utils";
+import Participant from "./Participant";
 
 const bandwidthRtc = new BandwidthRtc();
 
@@ -70,14 +70,6 @@ const useStyles = makeStyles((theme) => ({
       },
     },
   },
-  video: {
-    left: "50%",
-    minHeight: "100%",
-    minWidth: "100%",
-    position: "absolute",
-    top: "50%",
-    transform: "translate(-50%, -50%)",
-  },
   localVideo: {
     right: "20px",
     position: "absolute",
@@ -94,22 +86,6 @@ const useStyles = makeStyles((theme) => ({
       opacity: 0,
       transition: "opacity .1s ease-in-out",
     },
-  },
-  hiddenVideo: {
-    display: "none",
-  },
-  phoneWrapper: {
-    width: "100%",
-    height: "100%",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  phoneIcon: {
-    fontSize: "10vw",
-    height: "auto",
-    width: "auto",
-    padding: "2vw",
   },
   iconFont: {
     fontSize: "10vw",
@@ -228,6 +204,44 @@ const Conference: React.FC = (props) => {
   const [localStream, setLocalStream] = useState<RtcStream>();
   const [immersiveMode, setImmersiveMode] = useState(false);
   const [redirectTo, setRedirectTo] = useState<string>();
+  const [selectedVideoIndex, setSelectedVideoIndex] = useState<number | null>(
+    null
+  );
+  const [selectedStreamId, setSelectedStreamId] = useState<string | null>(null);
+  const [screenShareStreamId, setScreenShareStreamId] = useState<string>();
+
+  const onVideoClickHandler = (streamId: string, index: number) => {
+    if (index === selectedVideoIndex) {
+      setSelectedVideoIndex(null);
+      setSelectedStreamId(null);
+    } else {
+      setSelectedVideoIndex(index);
+      setSelectedStreamId(streamId);
+    }
+  };
+
+  const handleScreenShareEnabled = (enabled: boolean) => {
+    if (enabled) {
+      navigator.mediaDevices
+        //@ts-ignore
+        .getDisplayMedia({
+          video: true,
+        })
+        .then(async (stream: MediaStream) => {
+          const screenShareStream = await bandwidthRtc.publish(stream);
+          setScreenShareStreamId(screenShareStream.streamId);
+          console.log(`published screenshare id ${screenShareStream.streamId}`);
+        })
+        .catch((e: Error) => {
+          console.error(e);
+        });
+    } else {
+      if (screenShareStreamId) {
+        bandwidthRtc.unpublish(screenShareStreamId);
+        console.log(`unpublished screenshare id ${screenShareStreamId}`);
+      }
+    }
+  };
   const [error, setError] = useState<{
     message: string;
     datetime: string;
@@ -265,7 +279,7 @@ const Conference: React.FC = (props) => {
           setDeviceToken(deviceToken);
           setPhoneNumber(phoneNumber);
 
-          let options: any = {};
+          let options: RtcOptions = {};
           if (responseBody.websocketUrl) {
             options.websocketUrl = responseBody.websocketUrl;
           }
@@ -303,8 +317,12 @@ const Conference: React.FC = (props) => {
         ...remainingStreams
       } = remoteStreams;
       setRemoteStreams(remainingStreams);
+      if (event.streamId === selectedStreamId) {
+        setSelectedStreamId(null);
+        setSelectedVideoIndex(null);
+      }
     });
-  }, [remoteStreams]);
+  }, [remoteStreams, selectedStreamId, selectedVideoIndex]);
 
   useEffect(() => {
     if (immersiveModeTimeout) {
@@ -354,61 +372,18 @@ const Conference: React.FC = (props) => {
         }}
       ></video>
 
-      <DynamicGrid>
+      <DynamicGrid selectedIndex={selectedVideoIndex}>
         {Object.keys(remoteStreams).length > 0 ? (
-          Object.keys(remoteStreams).map((streamId: string) => {
-            const remoteStream = remoteStreams[streamId];
-            if (remoteStream.mediaType === MediaType.AUDIO) {
-              return (
-                <div className={classes.phoneWrapper}>
-                  <Avatar
-                    className={classes.phoneIcon}
-                    key={streamId}
-                    style={{
-                      backgroundColor: randomBrandColorFromString(
-                        remoteStream.streamId
-                      ),
-                    }}
-                  >
-                    <Phone className={classes.iconFont} />
-                  </Avatar>
-                  <video
-                    playsInline
-                    autoPlay
-                    className={classes.hiddenVideo}
-                    key={streamId}
-                    ref={(remoteVideoElement) => {
-                      if (
-                        remoteVideoElement &&
-                        remoteStream &&
-                        remoteVideoElement.srcObject !==
-                          remoteStream.mediaStream
-                      ) {
-                        remoteVideoElement.srcObject = remoteStream.mediaStream;
-                      }
-                    }}
-                  ></video>
-                </div>
-              );
-            } else {
-              return (
-                <video
-                  playsInline
-                  autoPlay
-                  className={classes.video}
-                  key={streamId}
-                  ref={(remoteVideoElement) => {
-                    if (
-                      remoteVideoElement &&
-                      remoteStream &&
-                      remoteVideoElement.srcObject !== remoteStream.mediaStream
-                    ) {
-                      remoteVideoElement.srcObject = remoteStream.mediaStream;
-                    }
-                  }}
-                ></video>
-              );
-            }
+          Object.values(remoteStreams).map((rtcStream: RtcStream, index) => {
+            return (
+              <Participant
+                rtcStream={rtcStream}
+                onClick={() => {
+                  onVideoClickHandler(rtcStream.streamId, index);
+                }}
+                cropped={index !== selectedVideoIndex}
+              ></Participant>
+            );
           })
         ) : (
           <Welcome
@@ -417,17 +392,19 @@ const Conference: React.FC = (props) => {
           ></Welcome>
         )}
       </DynamicGrid>
-
       <CallControl
         className={
           immersiveMode ? classes.callControlHidden : classes.callControl
         }
         onMicEnabled={bandwidthRtc.setMicEnabled}
-        onCameraEnabled={bandwidthRtc.setCameraEnabled}
+        onCameraEnabled={(enabled) =>
+          bandwidthRtc.setCameraEnabled(enabled, localStream?.streamId)
+        }
         onHangup={() => {
           bandwidthRtc.disconnect();
           setRedirectTo("/");
         }}
+        onScreenShareEnabled={handleScreenShareEnabled}
       >
         >
       </CallControl>
