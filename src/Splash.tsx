@@ -32,7 +32,7 @@ const Splash: React.FC = () => {
     <div className={classes.root}>
       <Chip
         className={classes.chip}
-        label="Bandwidth Web Conferencing is for internal use only. Please use Chrome browser for best results."
+        label="Bandwidth Web Conferencing is for sample use only. Please use Chrome browser for best results."
       />
     </div>
   );
