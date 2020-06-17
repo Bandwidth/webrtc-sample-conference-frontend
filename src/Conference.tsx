@@ -5,11 +5,7 @@ import { makeStyles } from "@material-ui/core/styles";
 import { Close, Info } from "@material-ui/icons";
 import moment from "moment";
 
-import BandwidthRtc, {
-  SubscriptionEvent,
-  RtcStream,
-  RtcOptions,
-} from "@bandwidth/webrtc-browser-sdk";
+import BandwidthRtc, { RtcStream, RtcOptions } from "@bandwidth/webrtc-browser";
 
 import CallControl from "./CallControl";
 import DynamicGrid from "./DynamicGrid";
@@ -176,11 +172,7 @@ const SessionInfo: React.FC<SessionInfoProps> = (props) => {
     return (
       <div className={classes.sessionInfoWrapper}>
         <Info
-          className={
-            props.immersiveMode
-              ? classes.sessionInfoOpenHidden
-              : classes.sessionInfoOpen
-          }
+          className={props.immersiveMode ? classes.sessionInfoOpenHidden : classes.sessionInfoOpen}
           onClick={() => {
             setSessionInfoEnabled(true);
           }}
@@ -204,9 +196,7 @@ const Conference: React.FC = (props) => {
   const [localStream, setLocalStream] = useState<RtcStream>();
   const [immersiveMode, setImmersiveMode] = useState(false);
   const [redirectTo, setRedirectTo] = useState<string>();
-  const [selectedVideoIndex, setSelectedVideoIndex] = useState<number | null>(
-    null
-  );
+  const [selectedVideoIndex, setSelectedVideoIndex] = useState<number | null>(null);
   const [selectedStreamId, setSelectedStreamId] = useState<string | null>(null);
   const [screenShareStreamId, setScreenShareStreamId] = useState<string>();
 
@@ -229,8 +219,8 @@ const Conference: React.FC = (props) => {
         })
         .then(async (stream: MediaStream) => {
           const screenShareStream = await bandwidthRtc.publish(stream);
-          setScreenShareStreamId(screenShareStream.streamId);
-          console.log(`published screenshare id ${screenShareStream.streamId}`);
+          setScreenShareStreamId(screenShareStream.endpointId);
+          console.log(`published screenshare id ${screenShareStream.endpointId}`);
         })
         .catch((e: Error) => {
           console.error(e);
@@ -258,9 +248,7 @@ const Conference: React.FC = (props) => {
       });
       if (!response.ok) {
         const error = await response.text();
-        throw new Error(
-          `Request to create participant returned ${response.status}, message=${error}`
-        );
+        throw new Error(`Request to create participant returned ${response.status}, message=${error}`);
       }
       return await response.json();
     }
@@ -292,6 +280,7 @@ const Conference: React.FC = (props) => {
           const publishResponse = await bandwidthRtc.publish();
           setLocalStream(publishResponse);
         } catch (e) {
+          console.log("Error joining conference", e);
           setError({
             message: e.toString() as string,
             datetime: moment().format(),
@@ -304,20 +293,17 @@ const Conference: React.FC = (props) => {
   }, [slug]);
 
   useEffect(() => {
-    bandwidthRtc.onSubscribe((stream: RtcStream) => {
+    bandwidthRtc.onStreamAvailable((stream: RtcStream) => {
       setRemoteStreams({
         ...remoteStreams,
-        [stream.streamId]: stream,
+        [stream.endpointId]: stream,
       });
     });
 
-    bandwidthRtc.onUnsubscribed((event: SubscriptionEvent) => {
-      const {
-        [event.streamId]: oldStream,
-        ...remainingStreams
-      } = remoteStreams;
+    bandwidthRtc.onStreamUnavailable((endpointId: string) => {
+      const { [endpointId]: oldStream, ...remainingStreams } = remoteStreams;
       setRemoteStreams(remainingStreams);
-      if (event.streamId === selectedStreamId) {
+      if (endpointId === selectedStreamId) {
         setSelectedStreamId(null);
         setSelectedVideoIndex(null);
       }
@@ -340,9 +326,7 @@ const Conference: React.FC = (props) => {
 
   return (
     <div
-      className={
-        immersiveMode ? classes.conferenceNoCursor : classes.conference
-      }
+      className={immersiveMode ? classes.conferenceNoCursor : classes.conference}
       onMouseMove={() => setImmersiveMode(false)}
     >
       <SessionInfo
@@ -350,7 +334,7 @@ const Conference: React.FC = (props) => {
         userAgent={userAgent}
         conferenceId={conferenceId}
         participantId={participantId}
-        localStream={localStream && localStream.streamId}
+        localStream={localStream && localStream.endpointId}
         remoteStreams={Object.keys(remoteStreams)}
         error={error}
       />
@@ -362,11 +346,7 @@ const Conference: React.FC = (props) => {
         muted
         className={classes.localVideo}
         ref={(localVideoElement) => {
-          if (
-            localVideoElement &&
-            localStream &&
-            localVideoElement.srcObject !== localStream.mediaStream
-          ) {
+          if (localVideoElement && localStream && localVideoElement.srcObject !== localStream.mediaStream) {
             localVideoElement.srcObject = localStream.mediaStream;
           }
         }}
@@ -377,37 +357,29 @@ const Conference: React.FC = (props) => {
           Object.values(remoteStreams).map((rtcStream: RtcStream, index) => {
             return (
               <Participant
+                key={index}
                 rtcStream={rtcStream}
                 onClick={() => {
-                  onVideoClickHandler(rtcStream.streamId, index);
+                  onVideoClickHandler(rtcStream.endpointId, index);
                 }}
                 cropped={index !== selectedVideoIndex}
               ></Participant>
             );
           })
         ) : (
-          <Welcome
-            conferenceId={conferenceId}
-            phoneNumber={phoneNumber}
-          ></Welcome>
+          <Welcome conferenceId={conferenceId} phoneNumber={phoneNumber}></Welcome>
         )}
       </DynamicGrid>
       <CallControl
-        className={
-          immersiveMode ? classes.callControlHidden : classes.callControl
-        }
+        className={immersiveMode ? classes.callControlHidden : classes.callControl}
         onMicEnabled={bandwidthRtc.setMicEnabled}
-        onCameraEnabled={(enabled) =>
-          bandwidthRtc.setCameraEnabled(enabled, localStream?.streamId)
-        }
+        onCameraEnabled={(enabled) => bandwidthRtc.setCameraEnabled(enabled, localStream?.endpointId)}
         onHangup={() => {
           bandwidthRtc.disconnect();
           setRedirectTo("/");
         }}
         onScreenShareEnabled={handleScreenShareEnabled}
-      >
-        >
-      </CallControl>
+      ></CallControl>
       {redirectTo != null ? <Redirect to={redirectTo}></Redirect> : undefined}
     </div>
   );

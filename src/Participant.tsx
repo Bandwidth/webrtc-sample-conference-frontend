@@ -1,5 +1,5 @@
 import React from "react";
-import { RtcStream, MediaType } from "@bandwidth/webrtc-browser-sdk";
+import { RtcStream, MediaType } from "@bandwidth/webrtc-browser";
 import { makeStyles } from "@material-ui/core/styles";
 import Avatar from "@material-ui/core/Avatar";
 import { randomBrandColorFromString } from "./Utils";
@@ -48,14 +48,14 @@ const useStyles = makeStyles((theme) => ({
 const Participant: React.FC<ParticipantProps> = (props) => {
   const classes = useStyles();
 
-  if (props.rtcStream.mediaType === MediaType.AUDIO) {
+  if (!props.rtcStream.mediaTypes.includes(MediaType.VIDEO)) {
     return (
       <div className={classes.phoneWrapper}>
         <Avatar
           className={classes.phoneIcon}
           style={{
             backgroundColor: randomBrandColorFromString(
-              props.rtcStream.streamId
+              props.rtcStream.endpointId
             ),
           }}
         >
@@ -65,7 +65,7 @@ const Participant: React.FC<ParticipantProps> = (props) => {
           playsInline
           autoPlay
           className={classes.hiddenVideo}
-          key={props.rtcStream.streamId}
+          key={props.rtcStream.endpointId}
           ref={(remoteVideoElement) => {
             if (
               remoteVideoElement &&
@@ -85,7 +85,7 @@ const Participant: React.FC<ParticipantProps> = (props) => {
         playsInline
         autoPlay
         className={props.cropped ? classes.croppedVideo : classes.video}
-        key={props.rtcStream.streamId}
+        key={props.rtcStream.endpointId}
         ref={(remoteVideoElement) => {
           if (
             remoteVideoElement &&
