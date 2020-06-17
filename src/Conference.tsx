@@ -357,7 +357,7 @@ const Conference: React.FC = (props) => {
           Object.values(remoteStreams).map((rtcStream: RtcStream, index) => {
             return (
               <Participant
-                key={rtcStream.endpointId}
+                key={index}
                 rtcStream={rtcStream}
                 onClick={() => {
                   onVideoClickHandler(rtcStream.endpointId, index);

@@ -44,7 +44,7 @@ const Welcome: React.FC<WelcomeProps> = props => {
             Copy Link
           </Button>
         </Grid>
-        <Grid item xs={6}>
+        {/* <Grid item xs={6}>
           <Typography variant="h5">
             2) Or, having them call: {props.phoneNumber || ""}
           </Typography>
@@ -54,7 +54,7 @@ const Welcome: React.FC<WelcomeProps> = props => {
               {props.conferenceId || ""}
             </pre>
           </Typography>
-        </Grid>
+        </Grid> */}
       </Grid>
     </Box>
   );
