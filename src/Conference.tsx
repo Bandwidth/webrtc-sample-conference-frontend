@@ -219,8 +219,8 @@ const Conference: React.FC = (props) => {
         })
         .then(async (stream: MediaStream) => {
           const screenShareStream = await bandwidthRtc.publish(stream);
-          console.log(`published screenshare id ${screenShareStream.endpointId}`);
           setScreenShareStreamId(screenShareStream.endpointId);
+          console.log(`published screenshare id ${screenShareStream.endpointId}`);
         })
         .catch((e: Error) => {
           console.error(e);
