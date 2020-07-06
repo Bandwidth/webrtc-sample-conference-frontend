@@ -187,6 +187,7 @@ const Conference: React.FC = (props) => {
   const classes = useStyles();
   let { slug } = useParams();
   const [conferenceId, setConferenceId] = useState<string>();
+  const [conferenceCode, setConferenceCode] = useState<string>();
   const [participantId, setParticipantId] = useState<string>();
   const [deviceToken, setDeviceToken] = useState<string>();
   const [phoneNumber, setPhoneNumber] = useState<string>();
@@ -257,12 +258,14 @@ const Conference: React.FC = (props) => {
       if (slug) {
         try {
           const responseBody = await createParticipant(slug);
+          const conferenceCode = responseBody.conferenceCode;
           const conferenceId = responseBody.conferenceId;
           const participantId = responseBody.participantId;
           const deviceToken = responseBody.deviceToken;
           const phoneNumber = responseBody.phoneNumber;
 
           setConferenceId(conferenceId);
+          setConferenceCode(conferenceCode);
           setParticipantId(participantId);
           setDeviceToken(deviceToken);
           setPhoneNumber(phoneNumber);
@@ -277,7 +280,11 @@ const Conference: React.FC = (props) => {
             },
             options
           );
-          const publishResponse = await bandwidthRtc.publish();
+          const publishResponse = await bandwidthRtc.publish(
+              {
+                audio: true,
+                video: true
+          });
           setLocalStream(publishResponse);
         } catch (e) {
           console.log("Error joining conference", e);
@@ -367,7 +374,7 @@ const Conference: React.FC = (props) => {
             );
           })
         ) : (
-          <Welcome conferenceId={conferenceId} phoneNumber={phoneNumber}></Welcome>
+          <Welcome conferenceId={conferenceId} phoneNumber={phoneNumber} conferenceCode={conferenceCode}></Welcome>
         )}
       </DynamicGrid>
       <CallControl
