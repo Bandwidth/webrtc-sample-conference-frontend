@@ -4,6 +4,7 @@ import { Box } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import { Close, Info } from "@material-ui/icons";
 import moment from "moment";
+import jwt_decode from "jwt-decode";
 
 import BandwidthRtc, { RtcStream, RtcOptions } from "@bandwidth/webrtc-browser";
 
@@ -102,9 +103,11 @@ interface SessionInfoProps {
   immersiveMode: boolean;
   userAgent: string;
   conferenceId?: string;
+  conferenceCode?: string;
+  conferencePhoneNumber?: string
   participantId?: string;
-  localStream?: string;
-  remoteStreams: string[];
+  localStream?: RtcStream;
+  remoteStreams: RtcStream[];
   error?: { message: string; datetime: string };
 }
 
@@ -133,6 +136,18 @@ const SessionInfo: React.FC<SessionInfoProps> = (props) => {
                 <div>{props.conferenceId}</div>
               </li>
             )}
+            {props.conferenceCode && (
+                <li>
+                  <h4>Conference Code</h4>
+                  <div>{props.conferenceCode}</div>
+                </li>
+            )}
+            {props.conferencePhoneNumber && (
+                <li>
+                  <h4>Conference Phone Number</h4>
+                  <div>{props.conferencePhoneNumber}</div>
+                </li>
+            )}
             {props.participantId && (
               <li>
                 <h4>Participant Id</h4>
@@ -142,7 +157,7 @@ const SessionInfo: React.FC<SessionInfoProps> = (props) => {
             {props.localStream && (
               <li>
                 <h4>Local Stream</h4>
-                <div>{props.localStream}</div>
+                <div>{props.localStream.endpointId} {props.localStream.alias}</div>
               </li>
             )}
             {props.remoteStreams.length > 0 && (
@@ -150,8 +165,8 @@ const SessionInfo: React.FC<SessionInfoProps> = (props) => {
                 <h4>Remote Streams</h4>
                 <ul>
                   {props.remoteStreams.map((rs) => (
-                    <li key={rs}>
-                      <div>{rs}</div>
+                    <li key={rs.endpointId}>
+                      <div>{rs.endpointId} {rs.alias}</div>
                     </li>
                   ))}
                 </ul>
@@ -219,7 +234,7 @@ const Conference: React.FC = (props) => {
           video: true,
         })
         .then(async (stream: MediaStream) => {
-          const screenShareStream = await bandwidthRtc.publish(stream);
+          const screenShareStream = await bandwidthRtc.publish(stream, undefined, 'screenshare');
           setScreenShareStreamId(screenShareStream.endpointId);
           console.log(`published screenshare id ${screenShareStream.endpointId}`);
         })
@@ -284,7 +299,10 @@ const Conference: React.FC = (props) => {
               {
                 audio: true,
                 video: true
-          });
+              },
+              undefined,
+              'usermedia'
+              );
           setLocalStream(publishResponse);
         } catch (e) {
           console.log("Error joining conference", e);
@@ -340,9 +358,11 @@ const Conference: React.FC = (props) => {
         immersiveMode={immersiveMode}
         userAgent={userAgent}
         conferenceId={conferenceId}
+        conferenceCode={conferenceCode}
+        conferencePhoneNumber={phoneNumber}
         participantId={participantId}
-        localStream={localStream && localStream.endpointId}
-        remoteStreams={Object.keys(remoteStreams)}
+        localStream={localStream}
+        remoteStreams={Object.values(remoteStreams)}
         error={error}
       />
 
