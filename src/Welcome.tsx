@@ -5,6 +5,7 @@ import { FileCopy } from "@material-ui/icons";
 interface WelcomeProps {
   phoneNumber?: string;
   conferenceId?: string;
+  conferenceCode?: string;
 }
 
 const useStyles = makeStyles(theme => ({
@@ -44,17 +45,17 @@ const Welcome: React.FC<WelcomeProps> = props => {
             Copy Link
           </Button>
         </Grid>
-        {/* <Grid item xs={6}>
+        <Grid item xs={6}>
           <Typography variant="h5">
             2) Or, having them call: {props.phoneNumber || ""}
           </Typography>
           <Typography variant="h5">
             and entering code:
             <pre style={{ fontSize: "2em", marginTop: 0 }}>
-              {props.conferenceId || ""}
+              {props.conferenceCode || ""}
             </pre>
           </Typography>
-        </Grid> */}
+        </Grid>
       </Grid>
     </Box>
   );
