@@ -295,15 +295,19 @@ const Conference: React.FC = (props) => {
             },
             options
           );
-          const publishResponse = await bandwidthRtc.publish(
-              {
-                audio: true,
-                video: true
-              },
-              undefined,
-              'usermedia'
-              );
-          setLocalStream(publishResponse);
+          try {
+            const publishResponse = await bandwidthRtc.publish(
+                {
+                  audio: true,
+                  video: true
+                },
+                undefined,
+                'usermedia'
+                );
+            setLocalStream(publishResponse);
+          } catch (e) {
+            console.log("Error publishing... Skipping", e);
+          }
         } catch (e) {
           console.log("Error joining conference", e);
           setError({
