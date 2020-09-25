@@ -4,7 +4,6 @@ import { Box } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import { Close, Info } from "@material-ui/icons";
 import moment from "moment";
-import jwt_decode from "jwt-decode";
 
 import BandwidthRtc, { RtcStream, RtcOptions } from "@bandwidth/webrtc-browser";
 
