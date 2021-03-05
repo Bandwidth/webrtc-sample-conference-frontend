@@ -12,7 +12,7 @@ import DynamicGrid from "./DynamicGrid";
 import Welcome from "./Welcome";
 import Participant from "./Participant";
 
-const bandwidthRtc = new BandwidthRtc();
+const bandwidthRtc = new BandwidthRtc("debug");
 
 const useStyles = makeStyles((theme) => ({
   conference: {
@@ -199,7 +199,7 @@ const Conference: React.FC = (props) => {
   const [redirectTo, setRedirectTo] = useState<string>();
   const [selectedVideoIndex, setSelectedVideoIndex] = useState<number | null>(null);
   const [selectedStreamId, setSelectedStreamId] = useState<string | null>(null);
-  const [screenShareStreamId, setScreenShareStreamId] = useState<string>();
+  const [screenShareStream, setScreenShareStream] = useState<RtcStream>();
 
   const onVideoClickHandler = (streamId: string, index: number) => {
     if (index === selectedVideoIndex) {
@@ -220,16 +220,16 @@ const Conference: React.FC = (props) => {
         })
         .then(async (stream: MediaStream) => {
           const screenShareStream = await bandwidthRtc.publish(stream);
-          setScreenShareStreamId(screenShareStream.endpointId);
-          console.log(`published screenshare id ${screenShareStream.endpointId}`);
+          setScreenShareStream(screenShareStream);
+          console.log("published screenshare", screenShareStream);
         })
         .catch((e: Error) => {
           console.error(e);
         });
     } else {
-      if (screenShareStreamId) {
-        bandwidthRtc.unpublish(screenShareStreamId);
-        console.log(`unpublished screenshare id ${screenShareStreamId}`);
+      if (screenShareStream) {
+        bandwidthRtc.unpublish(screenShareStream);
+        console.log("unpublished screenshare", screenShareStream);
       }
     }
   };
@@ -301,16 +301,22 @@ const Conference: React.FC = (props) => {
 
   useEffect(() => {
     bandwidthRtc.onStreamAvailable((stream: RtcStream) => {
-      setRemoteStreams({
-        ...remoteStreams,
-        [stream.endpointId]: stream,
+      console.log("onStreamAvailable", stream);
+      setRemoteStreams(currentStreams => {
+        return {
+          ...currentStreams,
+          [stream.endpointId]: stream,
+        };
       });
     });
 
-    bandwidthRtc.onStreamUnavailable((endpointId: string) => {
-      const { [endpointId]: oldStream, ...remainingStreams } = remoteStreams;
-      setRemoteStreams(remainingStreams);
-      if (endpointId === selectedStreamId) {
+    bandwidthRtc.onStreamUnavailable((streamId: string) => {
+      console.log("onStreamUnavailable", streamId);
+      setRemoteStreams(currentStreams => {
+        const { [streamId]: removedStream, ...remainingStreams } = currentStreams;
+        return remainingStreams;
+      });
+      if (streamId === selectedStreamId) {
         setSelectedStreamId(null);
         setSelectedVideoIndex(null);
       }
@@ -380,7 +386,7 @@ const Conference: React.FC = (props) => {
       <CallControl
         className={immersiveMode ? classes.callControlHidden : classes.callControl}
         onMicEnabled={bandwidthRtc.setMicEnabled}
-        onCameraEnabled={(enabled) => bandwidthRtc.setCameraEnabled(enabled, localStream?.endpointId)}
+        onCameraEnabled={(enabled) => bandwidthRtc.setCameraEnabled(enabled, localStream)}
         onHangup={() => {
           bandwidthRtc.disconnect();
           setRedirectTo("/");
