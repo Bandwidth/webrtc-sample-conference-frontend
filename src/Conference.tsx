@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Redirect, useParams } from "react-router-dom";
+import { Redirect, useLocation, useParams } from "react-router-dom";
 import { Box } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
 import { Close, Info } from "@material-ui/icons";
@@ -200,6 +200,7 @@ const Conference: React.FC = (props) => {
   const userAgent = window.navigator.userAgent;
   const classes = useStyles();
   let { slug } = useParams();
+  let location = useLocation();
   const [conferenceId, setConferenceId] = useState<string>();
   const [conferenceCode, setConferenceCode] = useState<string>();
   const [participantId, setParticipantId] = useState<string>();
@@ -253,8 +254,12 @@ const Conference: React.FC = (props) => {
   }>();
 
   useEffect(() => {
-    async function createParticipant(slug: string) {
-      const response = await fetch(`/conferences/${slug}/participants`, {
+    async function createParticipant(slug: string, version?: string) {
+      let url = `/conferences/${slug}/participants`;
+      if (version) {
+        url = `${url}?version=${version}`;
+      }
+      const response = await fetch(url, {
         method: "POST",
         body: JSON.stringify({ name: "" }),
         headers: {
@@ -271,7 +276,8 @@ const Conference: React.FC = (props) => {
     async function init() {
       if (slug) {
         try {
-          const responseBody = await createParticipant(slug);
+          const queryParams = new URLSearchParams(location.search);
+          const responseBody = await createParticipant(slug, queryParams.get("version") || undefined);
           const conferenceCode = responseBody.conferenceCode;
           const conferenceId = responseBody.conferenceId;
           const participantId = responseBody.participantId;
