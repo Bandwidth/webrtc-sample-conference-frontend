@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Fab, Box } from "@material-ui/core";
 import {
   CallEnd,
@@ -13,10 +13,13 @@ import { red, green } from "@material-ui/core/colors";
 
 interface CallControlProps {
   className?: string;
-  onMicEnabled?: { (enabled: boolean): void };
-  onCameraEnabled?: { (enabled: boolean): void };
+  isMicEnabled: boolean;
+  onToggleMic?: { (): void };
+  isCameraEnabled: boolean;
+  onToggleCamera?: { (): void };
+  isScreenShareEnabled: boolean;
+  onToggleScreenShare?: { (): void };
   onHangup?: { (): void };
-  onScreenShareEnabled?: { (enabled: boolean): void };
 }
 
 const useStyles = makeStyles((theme) => ({
@@ -67,23 +70,18 @@ const useStyles = makeStyles((theme) => ({
 const CallControl: React.FC<CallControlProps> = (props) => {
   const classes = useStyles();
 
-  const [micEnabled, setMicEnabled] = useState(true);
-  const [cameraEnabled, setCameraEnabled] = useState(true);
-  const [screenShareEnabled, setScreenShareEnabled] = useState(false);
-
   return (
     <div className={props.className}>
       <Box className={classes.callControl}>
         <Fab
-          onClick={() => {
-            setMicEnabled(!micEnabled);
-            if (props.onMicEnabled) {
-              props.onMicEnabled(!micEnabled);
-            }
-          }}
-          className={micEnabled ? classes.redButton : classes.redButtonPressed}
+            onClick={() => {
+              if (props.onToggleMic) {
+                props.onToggleMic();
+              }
+            }}
+            className={props.isMicEnabled ? classes.redButton : classes.redButtonPressed}
         >
-          {micEnabled ? <Mic /> : <MicOff />}
+          {props.isMicEnabled ? <Mic/> : <MicOff/>}
         </Fab>
         <Fab
           className={classes.redButton}
@@ -97,26 +95,24 @@ const CallControl: React.FC<CallControlProps> = (props) => {
         </Fab>
         <Fab
           onClick={() => {
-            setCameraEnabled(!cameraEnabled);
-            if (props.onCameraEnabled) {
-              props.onCameraEnabled(!cameraEnabled);
+            if (props.onToggleCamera) {
+              props.onToggleCamera();
             }
           }}
           className={
-            cameraEnabled ? classes.redButton : classes.redButtonPressed
+            props.isCameraEnabled ? classes.redButton : classes.redButtonPressed
           }
         >
-          {cameraEnabled ? <Videocam /> : <VideocamOff />}
+          {props.isCameraEnabled ? <Videocam /> : <VideocamOff />}
         </Fab>
         <Fab
           onClick={() => {
-            setScreenShareEnabled(!screenShareEnabled);
-            if (props.onScreenShareEnabled) {
-              props.onScreenShareEnabled(!screenShareEnabled);
+            if (props.onToggleScreenShare) {
+              props.onToggleScreenShare();
             }
           }}
           className={
-            !screenShareEnabled
+            !props.isScreenShareEnabled
               ? classes.greenButton
               : classes.greenButtonPressed
           }

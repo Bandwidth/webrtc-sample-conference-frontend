@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Redirect, useLocation, useParams } from "react-router-dom";
 import { Box } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
-import { Close, Info } from "@material-ui/icons";
+import { Close, Info, MicOff } from "@material-ui/icons";
+
 import moment from "moment";
 
 import BandwidthRtc, { RtcStream, RtcOptions } from "@bandwidth/webrtc-browser";
@@ -11,6 +12,7 @@ import CallControl from "./CallControl";
 import DynamicGrid from "./DynamicGrid";
 import Welcome from "./Welcome";
 import Participant from "./Participant";
+import {red} from "@material-ui/core/colors";
 
 const bandwidthRtc = new BandwidthRtc("debug");
 
@@ -67,12 +69,12 @@ const useStyles = makeStyles((theme) => ({
     },
   },
   localVideo: {
-    right: "20px",
     position: "absolute",
+    right: "20px",
     top: "20px",
+    zIndex: 10,
     transform: "scaleX(-1)",
     borderRadius: "10px",
-    zIndex: 10,
     border: "1px solid rgba(255, 255, 255, 0.33)",
     maxWidth: "200px",
     boxShadow: "0px 4px 20px rgba(0,0,0,0.5)",
@@ -82,6 +84,14 @@ const useStyles = makeStyles((theme) => ({
       opacity: 0,
       transition: "opacity .1s ease-in-out",
     },
+  },
+  localVideoMicOff: {
+    position: "absolute",
+    right: "20px",
+    top: "20px",
+    zIndex: 10,
+    color: "white",
+    backgroundColor: red["A700"]
   },
   iconFont: {
     fontSize: "10vw",
@@ -210,11 +220,18 @@ const Conference: React.FC = (props) => {
     [key: string]: RtcStream;
   }>({});
   const [localStream, setLocalStream] = useState<RtcStream>();
+  const [micEnabled, setMicEnabled] = useState(true);
+  const [cameraEnabled, setCameraEnabled] = useState(true);
+  const [screenShareEnabled, setScreenShareEnabled] = useState(false);
   const [immersiveMode, setImmersiveMode] = useState(false);
   const [redirectTo, setRedirectTo] = useState<string>();
   const [selectedVideoIndex, setSelectedVideoIndex] = useState<number | null>(null);
   const [selectedStreamId, setSelectedStreamId] = useState<string | null>(null);
   const [screenShareStream, setScreenShareStream] = useState<RtcStream>();
+  const [error, setError] = useState<{
+    message: string;
+    datetime: string;
+  }>();
 
   const onVideoClickHandler = (streamId: string, index: number) => {
     if (index === selectedVideoIndex) {
@@ -226,32 +243,59 @@ const Conference: React.FC = (props) => {
     }
   };
 
-  const handleScreenShareEnabled = (enabled: boolean) => {
-    if (enabled) {
+  const handleToggleMic = () => {
+    console.log("handleToggleMic, new micEnabled=" + !micEnabled);
+    setMicEnabled(!micEnabled);
+  };
+
+  const handleToggleCamera = () => {
+    console.log("handleToggleCamera, new cameraEnabled=" + !cameraEnabled);
+    setCameraEnabled(!cameraEnabled);
+  };
+
+  const handleToggleScreenShare = () => {
+    console.log("handleToggleScreenShare, new screenShareEnabled=" + !screenShareEnabled);
+    setScreenShareEnabled(!screenShareEnabled);
+  };
+
+  useEffect(() => {
+    if (localStream) {
+      bandwidthRtc.setMicEnabled(micEnabled);
+    }
+  }, [micEnabled, localStream]);
+
+  useEffect(() => {
+    if (localStream) {
+      bandwidthRtc.setCameraEnabled(cameraEnabled, localStream);
+    }
+  }, [cameraEnabled, localStream]);
+
+  useEffect(() => {
+    if (screenShareEnabled && !screenShareStream) {
       navigator.mediaDevices
-        //@ts-ignore
-        .getDisplayMedia({
-          video: true,
-        })
-        .then(async (stream: MediaStream) => {
-          const screenShareStream = await bandwidthRtc.publish(stream, undefined, 'screenshare');
-          setScreenShareStream(screenShareStream);
-          console.log("published screenshare", screenShareStream);
-        })
-        .catch((e: Error) => {
-          console.error(e);
-        });
+          //@ts-ignore
+          .getDisplayMedia({
+            video: true,
+          })
+          .then(async (stream: MediaStream) => {
+            const screenShareStream = await bandwidthRtc.publish(stream, undefined, 'screenshare');
+            setScreenShareStream(screenShareStream);
+            console.log("published screenshare", screenShareStream);
+          })
+          .catch((e: Error) => {
+            console.error(e);
+          });
     } else {
-      if (screenShareStream) {
-        bandwidthRtc.unpublish(screenShareStream);
-        console.log("unpublished screenshare", screenShareStream);
+      if (!screenShareEnabled && screenShareStream) {
+        try {
+          bandwidthRtc.unpublish(screenShareStream);
+        } finally {
+          setScreenShareStream(undefined);
+          console.log("unpublished screenshare", screenShareStream);
+        }
       }
     }
-  };
-  const [error, setError] = useState<{
-    message: string;
-    datetime: string;
-  }>();
+  }, [screenShareEnabled, screenShareStream]);
 
   useEffect(() => {
     async function createParticipant(slug: string, version?: string) {
@@ -324,7 +368,7 @@ const Conference: React.FC = (props) => {
     }
 
     init();
-  }, [slug]);
+  }, [slug, location]);
 
   useEffect(() => {
     bandwidthRtc.onStreamAvailable((stream: RtcStream) => {
@@ -381,18 +425,21 @@ const Conference: React.FC = (props) => {
         error={error}
       />
 
-      <video
-        id="localVideoPreview"
-        playsInline
-        autoPlay
-        muted
-        className={classes.localVideo}
-        ref={(localVideoElement) => {
-          if (localVideoElement && localStream && localVideoElement.srcObject !== localStream.mediaStream) {
-            localVideoElement.srcObject = localStream.mediaStream;
-          }
-        }}
-      ></video>
+      <div id="videoDiv">
+        <video
+          id="localVideoPreview"
+          playsInline
+          autoPlay
+          muted
+          className={classes.localVideo}
+          ref={(localVideoElement) => {
+            if (localVideoElement && localStream && localVideoElement.srcObject !== localStream.mediaStream) {
+              localVideoElement.srcObject = localStream.mediaStream;
+            }
+          }}
+        />
+        {micEnabled ? undefined : <MicOff className={classes.localVideoMicOff}/>}
+      </div>
 
       <DynamicGrid selectedIndex={selectedVideoIndex}>
         {Object.keys(remoteStreams).length > 0 ? (
@@ -405,24 +452,27 @@ const Conference: React.FC = (props) => {
                   onVideoClickHandler(rtcStream.endpointId, index);
                 }}
                 cropped={index !== selectedVideoIndex}
-              ></Participant>
+              />
             );
           })
         ) : (
-          <Welcome conferenceId={conferenceId} phoneNumber={phoneNumber} conferenceCode={conferenceCode}></Welcome>
+          <Welcome conferenceId={conferenceId} phoneNumber={phoneNumber} conferenceCode={conferenceCode}/>
         )}
       </DynamicGrid>
       <CallControl
         className={immersiveMode ? classes.callControlHidden : classes.callControl}
-        onMicEnabled={bandwidthRtc.setMicEnabled}
-        onCameraEnabled={(enabled) => bandwidthRtc.setCameraEnabled(enabled, localStream)}
+        isMicEnabled={micEnabled}
+        onToggleMic={handleToggleMic}
+        isCameraEnabled={cameraEnabled}
+        onToggleCamera={handleToggleCamera}
+        isScreenShareEnabled={screenShareEnabled}
+        onToggleScreenShare={handleToggleScreenShare}
         onHangup={() => {
           bandwidthRtc.disconnect();
           setRedirectTo("/");
         }}
-        onScreenShareEnabled={handleScreenShareEnabled}
-      ></CallControl>
-      {redirectTo != null ? <Redirect to={redirectTo}></Redirect> : undefined}
+      />
+      {redirectTo != null ? <Redirect to={redirectTo}/> : undefined}
     </div>
   );
 };
