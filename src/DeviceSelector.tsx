@@ -9,18 +9,23 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Select from '@material-ui/core/Select';
 
+import { getLocalDevices } from './services/local-devices';
 
-interface LobbyProps {
+
+interface DeviceSelectorProps {
     onSubmit: { (selectedVideoDevice: string, selectedAudioDevice: string): void };
     videoDevices?: MediaDeviceInfo[];
     audioDevices?: MediaDeviceInfo[];
 }
 
-const Lobby: React.FC<LobbyProps> = (props) => {
+const DeviceSelector: React.FC<DeviceSelectorProps> = (props) => {
     const [selectedCamera, setSelectedCamera] = useState<string>('Disabled');
     const [selectedMic, setSelectedMic] = useState<string>('Disabled');
 
-    const handleCameraSelected = (event: any) => {
+    const handleCameraSelected = async (event: any) => {
+        let devices = await getLocalDevices()
+        console.log('Hi1')
+        console.log(devices)
         setSelectedCamera(event.target.value);
     }
 
@@ -34,12 +39,12 @@ const Lobby: React.FC<LobbyProps> = (props) => {
                 <DialogTitle id="form-dialog-title">Welcome!</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        Please select a video and audio input devices
+                        Please select video and audio input devices
                     </DialogContentText>
-                    <InputLabel id="lobby-camera-select-input-label">Camera</InputLabel>
+                    <InputLabel id="device-selector-camera-select-input-label">Camera</InputLabel>
                     <Select
-                        labelId="lobby-camera-select-label"
-                        id="lobby-camera-select"
+                        labelId="device-selector-camera-select-label"
+                        id="device-selector-camera-select"
                         value={selectedCamera}
                         onChange={handleCameraSelected}
                     >
@@ -51,10 +56,10 @@ const Lobby: React.FC<LobbyProps> = (props) => {
                             })
                         }
                     </Select>
-                    <InputLabel id="lobby-mic-select-input-label">Microphone</InputLabel>
+                    <InputLabel id="device-selector-mic-select-input-label">Microphone</InputLabel>
                     <Select
-                        labelId="lobby-mic-select-label"
-                        id="lobby-mic-select"
+                        labelId="device-selector-mic-select-label"
+                        id="device-selector-mic-select"
                         value={selectedMic}
                         onChange={handleMicSelected}
                     >
@@ -71,7 +76,7 @@ const Lobby: React.FC<LobbyProps> = (props) => {
                     <Button color="primary" onClick={() => {
                         props.onSubmit(selectedCamera, selectedMic);
                     }}>
-                        Join Conference
+                        Save
                     </Button>
                 </DialogActions>
             </Dialog>
@@ -79,4 +84,4 @@ const Lobby: React.FC<LobbyProps> = (props) => {
     );
 }
 
-export default Lobby;
+export default DeviceSelector;

@@ -8,7 +8,9 @@ import Toolbar from "@material-ui/core/Toolbar";
 import Typography from "@material-ui/core/Typography";
 import IconButton from "@material-ui/core/IconButton";
 import AccountCircle from "@material-ui/icons/AccountCircle";
+import SettingsIcon from "@material-ui/icons/Settings";
 
+// import Settings from "./Settings";
 import Conferences from "./Conferences";
 import Conference from "./Conference";
 import Splash from "./Splash";
@@ -49,14 +51,6 @@ const App: React.FC = () => {
             <Splash />
             <AppBar position="static" className={classes.appBar}>
               <Toolbar>
-                {/* <IconButton
-                  edge="start"
-                  className={classes.menuButton}
-                  color="inherit"
-                  aria-label="menu"
-                >
-                  <MenuIcon />
-                </IconButton> */}
                 <Typography variant="h6" className={classes.title}>
                   Bandwidth Web Conferencing
                 </Typography>
@@ -68,6 +62,14 @@ const App: React.FC = () => {
                     color="inherit"
                   >
                     <AccountCircle />
+                  </IconButton>
+                  <IconButton
+                    aria-label="settings for current user"
+                    aria-controls="menu-appbar"
+                    aria-haspopup="true"
+                    color="inherit"
+                  >
+                    <SettingsIcon />
                   </IconButton>
                 </div>
               </Toolbar>
@@ -99,13 +101,6 @@ const App: React.FC = () => {
                   <Conference />
                 </Grid>
               }
-              // render={() => {
-              //   return (
-              //     <Grid item xs={12}>
-              //       <Conference />
-              //     </Grid>
-              //   );
-              // }}
             ></Route>
           </Grid>
         </Container>
