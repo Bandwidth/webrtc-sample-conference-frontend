@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState} from "react";
 import { BrowserRouter as Router, Route } from "react-router-dom";
 import { Container, Grid } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
@@ -10,7 +10,7 @@ import IconButton from "@material-ui/core/IconButton";
 import AccountCircle from "@material-ui/icons/AccountCircle";
 import SettingsIcon from "@material-ui/icons/Settings";
 
-// import Settings from "./Settings";
+import Settings from "./Settings";
 import Conferences from "./Conferences";
 import Conference from "./Conference";
 import Splash from "./Splash";
@@ -43,11 +43,18 @@ const useStyles = makeStyles(theme => ({
 
 const App: React.FC = () => {
   const classes = useStyles();
+  const [settingsModalOn, setSettingsModalOn] = useState(false);
+  const handleSettingsSubmit = (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined): void => {
+    console.log(selectedVideoDevice)
+    console.log(selectedAudioDevice)
+    setSettingsModalOn(false);
+  }
   return (
     <Grid container direction="column" className={classes.root}>
       <Router>
         <Route exact path="/">
           <div>
+            <Settings show={settingsModalOn} onSubmit={handleSettingsSubmit} />
             <Splash />
             <AppBar position="static" className={classes.appBar}>
               <Toolbar>
@@ -68,6 +75,9 @@ const App: React.FC = () => {
                     aria-controls="menu-appbar"
                     aria-haspopup="true"
                     color="inherit"
+                    onClick={() => {
+                      setSettingsModalOn(true);
+                    }}
                   >
                     <SettingsIcon />
                   </IconButton>
