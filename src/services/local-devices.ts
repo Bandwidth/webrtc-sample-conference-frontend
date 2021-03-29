@@ -43,7 +43,11 @@ const getLocalDevices = async (): Promise<{[key: string]: {[key: string]: MediaD
     }
 }
 
-const setAudioAndVideoDevice = (audioDevice: MediaDeviceInfo, videoDevice: MediaDeviceInfo) => {
+const setAudioAndVideoDevice = (audioDevice: MediaDeviceInfo | undefined, videoDevice: MediaDeviceInfo | undefined) => {
+  if (!audioDevice || !videoDevice) {
+    localStorage.removeItem('mediaDevicePreference');
+    return;
+  }
   const devicePreference: DevicePreference = {
     audioDevice: audioDevice,
     videoDevice: videoDevice
@@ -61,11 +65,11 @@ const getAudioAndVideoDevice = async () => {
   } else {
     const mediaDevicePreferenceJson: DevicePreference = JSON.parse(mediaDevicePreference);
     const localDevices: {[key: string]: {[key: string]: MediaDeviceInfo}} = await getLocalDevices();
-    const audioDeviceExists = Object.values(localDevices.audioDevices).includes(mediaDevicePreferenceJson.audioDevice)
-    const videoDeviceExists = Object.values(localDevices.videoDevices).includes(mediaDevicePreferenceJson.videoDevice)
+    const audioDevice = Object.values(localDevices.audioDevices).find((item) => {return item.deviceId === mediaDevicePreferenceJson.audioDevice.deviceId})
+    const videoDevice = Object.values(localDevices.videoDevices).find((item) => {return item.deviceId === mediaDevicePreferenceJson.videoDevice.deviceId})
     return {
-      video: videoDeviceExists ? {deviceId: mediaDevicePreferenceJson.videoDevice.deviceId} : true,
-      audio: audioDeviceExists ? {deviceId: mediaDevicePreferenceJson.audioDevice.deviceId} : true
+      video: videoDevice ? {deviceId: videoDevice.deviceId} : true,
+      audio: audioDevice ? {deviceId: audioDevice.deviceId} : true
     };
   }
 }

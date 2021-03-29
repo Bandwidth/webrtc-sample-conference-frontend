@@ -8,7 +8,7 @@ import moment from "moment";
 
 import BandwidthRtc, { RtcStream, RtcOptions } from "@bandwidth/webrtc-browser";
 
-import { getAudioAndVideoDevice } from './services/local-devices';
+import { getAudioAndVideoDevice, setAudioAndVideoDevice } from './services/local-devices';
 
 import CallControl from "./CallControl";
 import DynamicGrid from "./DynamicGrid";
@@ -209,22 +209,6 @@ const SessionInfo: React.FC<SessionInfoProps> = (props) => {
   }
 };
 
-/**
- * Stores information about each audio and video device, keyed by device ID.
- */
-interface DeviceData {
-  audioDevices: {[key: string]: MediaDeviceInfo};
-  videoDevices: {[key: string]: MediaDeviceInfo};
-}
-
-// /**
-//  * Stores info about the devices selected in the Settings.
-//  */
-// interface DeviceSelectionData {
-//   selectedVideo?: MediaDeviceInfo;
-//   selectedAudio?: MediaDeviceInfo;
-// }
-
 const Conference: React.FC = (props) => {
   const userAgent = window.navigator.userAgent;
   const classes = useStyles();
@@ -238,10 +222,6 @@ const Conference: React.FC = (props) => {
   // eslint-disable-next-line
   const [deviceToken, setDeviceToken] = useState<string>();
   const [phoneNumber, setPhoneNumber] = useState<string>();
-  // const [localDevices, setLocalDevices] = useState<DeviceData>({
-  //   audioDevices: {},
-  //   videoDevices: {}
-  // });
   const [remoteStreams, setRemoteStreams] = useState<{
     [key: string]: RtcStream;
   }>({});
@@ -324,39 +304,6 @@ const Conference: React.FC = (props) => {
     }
   }, [screenShareEnabled, screenShareStream]);
 
-  // const handleSettingsSubmit = (videoDeviceId: string, audioDeviceId: string) => {
-  //   console.log('handleSettingsSubmit called, videoDeviceId: ' + videoDeviceId + ' audioDevice: ' + audioDeviceId);
-  //   setDisplayDialog(false);
-
-  //   let newConnectionInfo:DeviceSelectionData = {};
-  //   if (videoDeviceId !== "Disabled") {
-  //     newConnectionInfo.selectedVideo = localDevices.videoDevices[videoDeviceId];
-  //   }
-  //   if (audioDeviceId !== "Disabled") {
-  //     newConnectionInfo.selectedAudio = localDevices.audioDevices[audioDeviceId];
-  //   }
-  //   setDeviceSelectionData(newConnectionInfo);
-  // }
-
-  // useEffect(() => {
-  //   async function initDevices() {
-  //     const devices = await getLocalDevices();
-  //     setLocalDevices({
-  //       videoDevices: devices.videoDevices,
-  //       audioDevices: devices.audioDevices
-  //     });
-  //   }
-
-  //   try {
-  //     initDevices();
-  //   } catch (e) {
-  //     alert(
-  //         "Sorry, you'll need to provide WebRTC input device access to use this app. Please reload and accept permissions"
-  //     );
-  //     console.log(`Can't move forward without WebRTC Permissions`);
-  //   }
-  // }, []);
-
   useEffect(() => {
     async function createParticipant(slug: string, version?: string) {
       let url = `/conferences/${slug}/participants`;
@@ -405,21 +352,6 @@ const Conference: React.FC = (props) => {
             options
           );
 
-          // let mediaConstraints:MediaStreamConstraints = {
-          //   video: false,
-          //   audio: false
-          // }
-          // if (deviceSelectionData.selectedVideo) {
-          //   mediaConstraints.video = {
-          //     deviceId: deviceSelectionData.selectedVideo.deviceId
-          //   };
-          // }
-          // if (deviceSelectionData.selectedAudio) {
-          //   mediaConstraints.audio = {
-          //     deviceId: deviceSelectionData.selectedAudio.deviceId
-          //   };
-          // }
-
           try {
             const mediaDevice = await getAudioAndVideoDevice();
             console.log("Media Devices: " + JSON.stringify(mediaDevice))
@@ -428,6 +360,7 @@ const Conference: React.FC = (props) => {
               undefined,
               'usermedia'
             );
+            
             setLocalStream(publishResponse);
           } catch (e) {
             console.log("Error publishing... Skipping", e);
@@ -483,16 +416,32 @@ const Conference: React.FC = (props) => {
     };
   }, [immersiveMode]);
 
-  const handleSettingsSubmit = (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined): void => {
+  const handleSettingsSubmit = async (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined) => {
     console.log(selectedVideoDevice)
     console.log(selectedAudioDevice)
     setSettingsModalOn(false);
+    try {
+      setAudioAndVideoDevice(selectedAudioDevice, selectedVideoDevice);
+      const mediaDevice = await getAudioAndVideoDevice();
+      console.log("Media Devices: " + JSON.stringify(mediaDevice))
+      try {
+        if (localStream) {
+          await bandwidthRtc.unpublish(localStream);
+        }
+      } finally {
+        setLocalStream(undefined);
+      }
+      const publishResponse = await bandwidthRtc.publish(
+        mediaDevice,
+        undefined,
+        'usermedia'
+      );
+      setLocalStream(publishResponse);
+    } catch (e) {
+      console.log("Error publishing... Skipping", e);
+    }
   }
 
-  // if (displayDialog) {
-  //   return <Settings onSubmit={handleSettingsSubmit}
-  //   />
-  // } else {
   return (
       <div
           className={immersiveMode ? classes.conferenceNoCursor : classes.conference}
@@ -565,7 +514,6 @@ const Conference: React.FC = (props) => {
         {redirectTo != null ? <Redirect to={redirectTo}></Redirect> : undefined}
       </div>
   );
-  // }
 };
 
 export default Conference;

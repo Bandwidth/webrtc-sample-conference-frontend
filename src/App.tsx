@@ -10,6 +10,8 @@ import IconButton from "@material-ui/core/IconButton";
 import AccountCircle from "@material-ui/icons/AccountCircle";
 import SettingsIcon from "@material-ui/icons/Settings";
 
+import { setAudioAndVideoDevice } from './services/local-devices';
+
 import Settings from "./Settings";
 import Conferences from "./Conferences";
 import Conference from "./Conference";
@@ -47,6 +49,7 @@ const App: React.FC = () => {
   const handleSettingsSubmit = (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined): void => {
     console.log(selectedVideoDevice)
     console.log(selectedAudioDevice)
+    setAudioAndVideoDevice(selectedAudioDevice, selectedVideoDevice);
     setSettingsModalOn(false);
   }
   return (

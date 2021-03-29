@@ -42,10 +42,21 @@ const Settings: React.FC<SettingsProps> = (props) => {
         setSelectedMic(event.target.value);
     }
 
+    const handleClose = async () => {
+        const selectedVideoDevice = videoDevices?.find((device) => {
+            return device.deviceId === selectedCamera
+        });
+        const selectedAudioDevice = audioDevices?.find((device) => {
+            return device.deviceId === selectedMic
+        });
+
+        await props.onSubmit(selectedVideoDevice, selectedAudioDevice);
+    }
+
     return (
         <div>
             <Dialog open={props.show} aria-labelledby="form-dialog-title">
-                <DialogTitle id="form-dialog-title">Welcome!</DialogTitle>
+                <DialogTitle id="form-dialog-title">Settings</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
                         Please select video and audio input devices
@@ -82,15 +93,7 @@ const Settings: React.FC<SettingsProps> = (props) => {
                     </Select>
                 </DialogContent>
                 <DialogActions>
-                    <Button color="primary" onClick={() => {
-                        const selectedVideoDevice = videoDevices?.find((device) => {
-                            return device.deviceId === selectedCamera
-                        });
-                        const selectedAudioDevice = audioDevices?.find((device) => {
-                            return device.deviceId === selectedMic
-                        });
-                        props.onSubmit(selectedVideoDevice, selectedAudioDevice);
-                    }}>
+                    <Button color="primary" onClick={handleClose}>
                         Save
                     </Button>
                 </DialogActions>
