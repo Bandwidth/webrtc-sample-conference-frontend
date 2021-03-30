@@ -416,16 +416,23 @@ const Conference: React.FC = (props) => {
     };
   }, [immersiveMode]);
 
+  const toggleSettings = () => {
+    setSettingsModalOn(!settingsModalOn)
+  }
+
   const handleSettingsSubmit = async (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined) => {
     console.log(selectedVideoDevice)
     console.log(selectedAudioDevice)
-    setSettingsModalOn(false);
+    toggleSettings();
     try {
       setAudioAndVideoDevice(selectedAudioDevice, selectedVideoDevice);
       const mediaDevice = await getAudioAndVideoDevice();
       console.log("Media Devices: " + JSON.stringify(mediaDevice))
       try {
         if (localStream) {
+          // Replace track
+          // localStream.mediaStream.
+          // localStream.mediaStream.getAudioTracks()
           await bandwidthRtc.unpublish(localStream);
         }
       } finally {
@@ -447,7 +454,7 @@ const Conference: React.FC = (props) => {
           className={immersiveMode ? classes.conferenceNoCursor : classes.conference}
           onMouseMove={() => setImmersiveMode(false)}
       >
-        <Settings show={settingsModalOn} onSubmit={handleSettingsSubmit} />
+        {settingsModalOn && <Settings toggleSettings={toggleSettings} onSubmit={handleSettingsSubmit} />}
         <SessionInfo
             immersiveMode={immersiveMode}
             userAgent={userAgent}

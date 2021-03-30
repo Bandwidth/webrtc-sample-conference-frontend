@@ -50,14 +50,19 @@ const App: React.FC = () => {
     console.log(selectedVideoDevice)
     console.log(selectedAudioDevice)
     setAudioAndVideoDevice(selectedAudioDevice, selectedVideoDevice);
-    setSettingsModalOn(false);
+    toggleSettings();
   }
+
+  const toggleSettings = () => {
+    setSettingsModalOn(!settingsModalOn)
+  }
+
   return (
     <Grid container direction="column" className={classes.root}>
       <Router>
         <Route exact path="/">
           <div>
-            <Settings show={settingsModalOn} onSubmit={handleSettingsSubmit} />
+            {settingsModalOn && <Settings toggleSettings={toggleSettings} onSubmit={handleSettingsSubmit} />}
             <Splash />
             <AppBar position="static" className={classes.appBar}>
               <Toolbar>

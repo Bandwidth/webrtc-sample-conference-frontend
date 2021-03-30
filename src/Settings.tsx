@@ -8,11 +8,13 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Select from '@material-ui/core/Select';
+import { Close } from "@material-ui/icons";
 
 import { getLocalDevices } from './services/local-devices';
+import { Grid } from '@material-ui/core';
 
 interface SettingsProps {
-    show: boolean,
+    toggleSettings: { (): void};
     onSubmit: { (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined): void };
 }
 
@@ -55,8 +57,17 @@ const Settings: React.FC<SettingsProps> = (props) => {
 
     return (
         <div>
-            <Dialog open={props.show} aria-labelledby="form-dialog-title">
-                <DialogTitle id="form-dialog-title">Settings</DialogTitle>
+            <Dialog open={true} aria-labelledby="form-dialog-title">
+                <DialogTitle id="form-dialog-title">
+                    <Grid
+                    container
+                    direction="row"
+                    justify="space-between"
+                    alignItems="center">
+                    Settings
+                    <Button size="small" onClick={props.toggleSettings}><Close></Close></Button>
+                    </Grid>
+                </DialogTitle>
                 <DialogContent>
                     <DialogContentText>
                         Please select video and audio input devices
