@@ -41,12 +41,12 @@ const Settings: React.FC<SettingsProps> = (props) => {
             setAudioDevices(Object.values(devices.audioDevices))
             const devicePreference = getDevicePreference()
             if (devicePreference.audioDevice && devices.audioDevices) {
-                if (Object.values(devices.audioDevices).filter((value) => value.deviceId === devicePreference.audioDevice?.deviceId).length !== 0) {
+                if (Object.values(devices.audioDevices).find((value) => value.deviceId === devicePreference.audioDevice?.deviceId)) {
                     setSelectedMic(devicePreference.audioDevice.deviceId)
                 }
             }
             if (devicePreference.videoDevice && devices.videoDevices) {
-                if (Object.values(devices.videoDevices).filter((value) => value.deviceId === devicePreference.videoDevice?.deviceId).length !== 0) {
+                if (Object.values(devices.videoDevices).find((value) => value.deviceId === devicePreference.videoDevice?.deviceId)) {
                     setSelectedCamera(devicePreference.videoDevice.deviceId)
                     let cameraStream = await getVideoStream(devicePreference.videoDevice.deviceId);
                     if (cameraStream) {
