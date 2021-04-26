@@ -9,9 +9,10 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Select from '@material-ui/core/Select';
 import { Close } from "@material-ui/icons";
+import { makeStyles } from "@material-ui/core/styles";
 
-import { getLocalDevices } from './services/local-devices';
-import { Grid } from '@material-ui/core';
+import { getDevicePreference, getLocalDevices } from './services/local-devices';
+import { CircularProgress, Grid } from '@material-ui/core';
 
 interface SettingsProps {
     toggleSettings: { (): void};
@@ -19,25 +20,64 @@ interface SettingsProps {
 }
 
 const Settings: React.FC<SettingsProps> = (props) => {
-
     const [selectedCamera, setSelectedCamera] = useState<string>('Disabled');
     const [selectedMic, setSelectedMic] = useState<string>('Disabled');
     const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>();
     const [audioDevices, setAudioDevices] = useState<MediaDeviceInfo[]>();
+    const [videoStream, setVideoStream] = useState<MediaStream>();
+    const [loading, setLoading] = useState<boolean>(true);
+
+    const useStyles = makeStyles((theme) => ({
+        videoTheme: {
+            maxWidth: '300px'
+        }
+    }));
+    const classes = useStyles()
 
     useEffect(() => {
         const localDevices = async () => {
             const devices = await getLocalDevices()
             setVideoDevices(Object.values(devices.videoDevices))
             setAudioDevices(Object.values(devices.audioDevices))
+            const devicePreference = getDevicePreference()
+            if (devicePreference.audioDevice && devices.audioDevices) {
+                if (Object.values(devices.audioDevices).filter((value) => value.deviceId === devicePreference.audioDevice?.deviceId).length !== 0) {
+                    setSelectedMic(devicePreference.audioDevice.deviceId)
+                }
+            }
+            if (devicePreference.videoDevice && devices.videoDevices) {
+                if (Object.values(devices.videoDevices).filter((value) => value.deviceId === devicePreference.videoDevice?.deviceId).length !== 0) {
+                    setSelectedCamera(devicePreference.videoDevice.deviceId)
+                    let cameraStream = await getVideoStream(devicePreference.videoDevice.deviceId);
+                    if (cameraStream) {
+                        setVideoStream(cameraStream)
+                    }
+                }
+            }
+            setLoading(false);
         };
         localDevices();
         
       }, []);
+
+    const closeModal = () => {
+        videoStream?.getTracks().forEach(track => track.stop())
+        props.toggleSettings()
+    }
+
+    const getVideoStream = async (deviceId: string): Promise<MediaStream> => {
+        return await navigator.mediaDevices.getUserMedia({video: {deviceId: deviceId}, audio: false });
+    }
     
     const handleCameraSelected = async (event: any) => {
-        console.log(event);
+        setLoading(true)
+        videoStream?.getTracks().forEach(track => track.stop())
+        let cameraStream = await getVideoStream(event.target.value);
+        if (cameraStream) {
+            setVideoStream(cameraStream)
+        }
         setSelectedCamera(event.target.value);
+        setLoading(false)
     }
 
     const handleMicSelected = (event: any) => {
@@ -51,7 +91,8 @@ const Settings: React.FC<SettingsProps> = (props) => {
         const selectedAudioDevice = audioDevices?.find((device) => {
             return device.deviceId === selectedMic
         });
-
+ 
+        videoStream?.getTracks().forEach(track => track.stop())
         await props.onSubmit(selectedVideoDevice, selectedAudioDevice);
     }
 
@@ -65,13 +106,28 @@ const Settings: React.FC<SettingsProps> = (props) => {
                     justify="space-between"
                     alignItems="center">
                     Settings
-                    <Button size="small" onClick={props.toggleSettings}><Close></Close></Button>
+                    <Button size="small" onClick={closeModal}><Close></Close></Button>
                     </Grid>
                 </DialogTitle>
                 <DialogContent>
                     <DialogContentText>
                         Please select video and audio input devices
                     </DialogContentText>
+                    {loading && 
+                        <CircularProgress />
+                    }
+                    {!loading &&
+                        <video
+                            className={classes.videoTheme}
+                            id="localVideoPreview"
+                            autoPlay
+                            muted
+                            ref={(localVideoElement) => {
+                                if (localVideoElement && videoStream)
+                                    localVideoElement.srcObject = videoStream;
+                            }}
+                        />
+                    }
                     <InputLabel id="settings-camera-select-input-label">Camera</InputLabel>
                     <Select
                         labelId="settings-camera-select-label"

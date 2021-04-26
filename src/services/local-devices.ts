@@ -5,8 +5,8 @@ const bandwidthRtc = new BandwidthRtc("debug");
  * Stores information about the user's base device preferences
  */
 interface DevicePreference {
-    audioDevice: MediaDeviceInfo;
-    videoDevice: MediaDeviceInfo;
+    audioDevice?: MediaDeviceInfo;
+    videoDevice?: MediaDeviceInfo;
 }
 
 /**
@@ -65,8 +65,8 @@ const getAudioAndVideoDevice = async () => {
   } else {
     const mediaDevicePreferenceJson: DevicePreference = JSON.parse(mediaDevicePreference);
     const localDevices: {[key: string]: {[key: string]: MediaDeviceInfo}} = await getLocalDevices();
-    const audioDevice = Object.values(localDevices.audioDevices).find((item) => {return item.deviceId === mediaDevicePreferenceJson.audioDevice.deviceId})
-    const videoDevice = Object.values(localDevices.videoDevices).find((item) => {return item.deviceId === mediaDevicePreferenceJson.videoDevice.deviceId})
+    const audioDevice = Object.values(localDevices.audioDevices).find((item) => {return item.deviceId === mediaDevicePreferenceJson.audioDevice?.deviceId})
+    const videoDevice = Object.values(localDevices.videoDevices).find((item) => {return item.deviceId === mediaDevicePreferenceJson.videoDevice?.deviceId})
     return {
       video: videoDevice ? {deviceId: videoDevice.deviceId} : true,
       audio: audioDevice ? {deviceId: audioDevice.deviceId} : true
@@ -74,12 +74,12 @@ const getAudioAndVideoDevice = async () => {
   }
 }
 
-const getDevicePreference = () => {
+const getDevicePreference = (): DevicePreference => {
   const mediaDevicePreference = localStorage.getItem('mediaDevicePreference');
   if (!mediaDevicePreference) {
     return {
-      audioDevice: null,
-      videoDevice: null
+      audioDevice: undefined,
+      videoDevice: undefined
     };
   } else {
     return JSON.parse(mediaDevicePreference);
