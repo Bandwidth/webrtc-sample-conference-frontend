@@ -427,12 +427,8 @@ const Conference: React.FC = (props) => {
     try {
       setAudioAndVideoDevice(selectedAudioDevice, selectedVideoDevice);
       const mediaDevice = await getAudioAndVideoDevice();
-      console.log("Media Devices: " + JSON.stringify(mediaDevice))
       try {
         if (localStream) {
-          // Replace track
-          // localStream.mediaStream.
-          // localStream.mediaStream.getAudioTracks()
           await bandwidthRtc.unpublish(localStream);
         }
       } finally {

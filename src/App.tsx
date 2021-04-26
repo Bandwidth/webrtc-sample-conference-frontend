@@ -47,8 +47,6 @@ const App: React.FC = () => {
   const classes = useStyles();
   const [settingsModalOn, setSettingsModalOn] = useState(false);
   const handleSettingsSubmit = (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined): void => {
-    console.log(selectedVideoDevice)
-    console.log(selectedAudioDevice)
     setAudioAndVideoDevice(selectedAudioDevice, selectedVideoDevice);
     toggleSettings();
   }

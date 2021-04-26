@@ -44,7 +44,7 @@ const getLocalDevices = async (): Promise<{[key: string]: {[key: string]: MediaD
 }
 
 const setAudioAndVideoDevice = (audioDevice: MediaDeviceInfo | undefined, videoDevice: MediaDeviceInfo | undefined) => {
-  if (!audioDevice || !videoDevice) {
+  if (!audioDevice && !videoDevice) {
     localStorage.removeItem('mediaDevicePreference');
     return;
   }
