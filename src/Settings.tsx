@@ -136,7 +136,7 @@ const Settings: React.FC<SettingsProps> = (props) => {
                         onChange={handleCameraSelected}
                     >
                         <MenuItem key="camera.disabled" value="Disabled">
-                            <em>Disable</em>
+                            <em>Select a default camera</em>
                         </MenuItem>
                         {videoDevices?.map((camera) => {
                                 return <MenuItem key={camera.deviceId} value={camera.deviceId}>{camera.label}</MenuItem>
@@ -151,7 +151,7 @@ const Settings: React.FC<SettingsProps> = (props) => {
                         onChange={handleMicSelected}
                     >
                         <MenuItem key="mic.disabled" value="Disabled">
-                            <em>Disable</em>
+                            <em>Select a default microphone</em>
                         </MenuItem>
                         {audioDevices?.map((mic) => {
                             return <MenuItem key={mic.deviceId} value={mic.deviceId}>{mic.label}</MenuItem>
