@@ -214,8 +214,6 @@ const Conference: React.FC = (props) => {
   const classes = useStyles();
   let { slug } = useParams();
   let location = useLocation();
-  // const [displayDialog, setDisplayDialog] = useState(true);
-  // const [deviceSelectionData, setDeviceSelectionData] = useState<DeviceSelectionData>();
   const [conferenceId, setConferenceId] = useState<string>();
   const [conferenceCode, setConferenceCode] = useState<string>();
   const [participantId, setParticipantId] = useState<string>();
