@@ -8,8 +8,11 @@ import moment from "moment";
 
 import BandwidthRtc, { RtcStream, RtcOptions } from "@bandwidth/webrtc-browser";
 
+import { getAudioAndVideoDevice, setAudioAndVideoDevice } from './services/local-devices';
+
 import CallControl from "./CallControl";
 import DynamicGrid from "./DynamicGrid";
+import Settings from "./Settings";
 import Welcome from "./Welcome";
 import Participant from "./Participant";
 import {red} from "@material-ui/core/colors";
@@ -214,6 +217,7 @@ const Conference: React.FC = (props) => {
   const [conferenceId, setConferenceId] = useState<string>();
   const [conferenceCode, setConferenceCode] = useState<string>();
   const [participantId, setParticipantId] = useState<string>();
+  // eslint-disable-next-line
   const [deviceToken, setDeviceToken] = useState<string>();
   const [phoneNumber, setPhoneNumber] = useState<string>();
   const [remoteStreams, setRemoteStreams] = useState<{
@@ -221,6 +225,7 @@ const Conference: React.FC = (props) => {
   }>({});
   const [localStream, setLocalStream] = useState<RtcStream>();
   const [micEnabled, setMicEnabled] = useState(true);
+  const [settingsModalOn, setSettingsModalOn] = useState(false);
   const [cameraEnabled, setCameraEnabled] = useState(true);
   const [screenShareEnabled, setScreenShareEnabled] = useState(false);
   const [immersiveMode, setImmersiveMode] = useState(false);
@@ -344,15 +349,16 @@ const Conference: React.FC = (props) => {
             },
             options
           );
+
           try {
+            const mediaDevice = await getAudioAndVideoDevice();
+            console.log("Media Devices: " + JSON.stringify(mediaDevice))
             const publishResponse = await bandwidthRtc.publish(
-                {
-                  audio: true,
-                  video: true
-                },
-                undefined,
-                'usermedia'
-                );
+              mediaDevice,
+              undefined,
+              'usermedia'
+            );
+            
             setLocalStream(publishResponse);
           } catch (e) {
             console.log("Error publishing... Skipping", e);
@@ -408,72 +414,104 @@ const Conference: React.FC = (props) => {
     };
   }, [immersiveMode]);
 
+  const toggleSettings = () => {
+    setSettingsModalOn(!settingsModalOn)
+  }
+
+  const handleSettingsSubmit = async (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined) => {
+    toggleSettings();
+    try {
+      setAudioAndVideoDevice(selectedAudioDevice, selectedVideoDevice);
+      const mediaDevice = await getAudioAndVideoDevice();
+      try {
+        if (localStream) {
+          await bandwidthRtc.unpublish(localStream);
+        }
+      } finally {
+        setLocalStream(undefined);
+      }
+      const publishResponse = await bandwidthRtc.publish(
+        mediaDevice,
+        undefined,
+        'usermedia'
+      );
+      setLocalStream(publishResponse);
+    } catch (e) {
+      console.log("Error publishing... Skipping", e);
+    }
+  }
+
   return (
-    <div
-      className={immersiveMode ? classes.conferenceNoCursor : classes.conference}
-      onMouseMove={() => setImmersiveMode(false)}
-    >
-      <SessionInfo
-        immersiveMode={immersiveMode}
-        userAgent={userAgent}
-        conferenceId={conferenceId}
-        conferenceCode={conferenceCode}
-        conferencePhoneNumber={phoneNumber}
-        participantId={participantId}
-        localStream={localStream}
-        remoteStreams={Object.values(remoteStreams)}
-        error={error}
-      />
-
-      <div id="videoDiv">
-        <video
-          id="localVideoPreview"
-          playsInline
-          autoPlay
-          muted
-          className={classes.localVideo}
-          ref={(localVideoElement) => {
-            if (localVideoElement && localStream && localVideoElement.srcObject !== localStream.mediaStream) {
-              localVideoElement.srcObject = localStream.mediaStream;
-            }
-          }}
+      <div
+          className={immersiveMode ? classes.conferenceNoCursor : classes.conference}
+          onMouseMove={() => setImmersiveMode(false)}
+      >
+        {settingsModalOn && <Settings toggleSettings={toggleSettings} onSubmit={handleSettingsSubmit} />}
+        <SessionInfo
+            immersiveMode={immersiveMode}
+            userAgent={userAgent}
+            conferenceId={conferenceId}
+            conferenceCode={conferenceCode}
+            conferencePhoneNumber={phoneNumber}
+            participantId={participantId}
+            localStream={localStream}
+            remoteStreams={Object.values(remoteStreams)}
+            error={error}
         />
-        {micEnabled ? undefined : <MicOff className={classes.localVideoMicOff}/>}
-      </div>
 
-      <DynamicGrid selectedIndex={selectedVideoIndex}>
-        {Object.keys(remoteStreams).length > 0 ? (
-          Object.values(remoteStreams).map((rtcStream: RtcStream, index) => {
-            return (
-              <Participant
-                key={index}
-                rtcStream={rtcStream}
-                onClick={() => {
-                  onVideoClickHandler(rtcStream.endpointId, index);
-                }}
-                cropped={index !== selectedVideoIndex}
-              />
-            );
-          })
-        ) : (
-          <Welcome conferenceId={conferenceId} phoneNumber={phoneNumber} conferenceCode={conferenceCode}/>
-        )}
-      </DynamicGrid>
-      <CallControl
-        className={immersiveMode ? classes.callControlHidden : classes.callControl}
-        isMicEnabled={micEnabled}
-        onToggleMic={handleToggleMic}
-        isCameraEnabled={cameraEnabled}
-        onToggleCamera={handleToggleCamera}
-        isScreenShareEnabled={screenShareEnabled}
-        onToggleScreenShare={handleToggleScreenShare}
-        onHangup={() => {
-          bandwidthRtc.disconnect();
-          setRedirectTo("/");
+    <div id="videoDiv">
+      <video
+        id="localVideoPreview"
+        playsInline
+        autoPlay
+        muted
+        className={classes.localVideo}
+        ref={(localVideoElement) => {
+          if (localVideoElement && localStream && localVideoElement.srcObject !== localStream.mediaStream) {
+            localVideoElement.srcObject = localStream.mediaStream;
+          }
         }}
       />
-      {redirectTo != null ? <Redirect to={redirectTo}/> : undefined}
+      {micEnabled ? undefined : <MicOff className={classes.localVideoMicOff}/>}
     </div>
+
+        <DynamicGrid selectedIndex={selectedVideoIndex}>
+          {Object.keys(remoteStreams).length > 0 ? (
+              Object.values(remoteStreams).map((rtcStream: RtcStream, index) => {
+                return (
+                    <Participant
+                        key={index}
+                        rtcStream={rtcStream}
+                        onClick={() => {
+                          onVideoClickHandler(rtcStream.endpointId, index);
+                        }}
+                        cropped={index !== selectedVideoIndex}
+                    />
+                );
+              })
+          ) : (
+              <Welcome conferenceId={conferenceId} phoneNumber={phoneNumber}
+                        conferenceCode={conferenceCode}></Welcome>
+          )}
+        </DynamicGrid>
+        <CallControl
+            className={immersiveMode ? classes.callControlHidden : classes.callControl}
+            isMicEnabled={micEnabled}
+            onToggleMic={handleToggleMic}
+            onToggleSettings={() => {
+              setSettingsModalOn(true);
+            }}
+            isCameraEnabled={cameraEnabled}
+            onToggleCamera={handleToggleCamera}
+            isScreenShareEnabled={screenShareEnabled}
+            onToggleScreenShare={handleToggleScreenShare}
+            onHangup={() => {
+              bandwidthRtc.disconnect();
+              setRedirectTo("/");
+            }}
+        />
+        {redirectTo != null ? <Redirect to={redirectTo}></Redirect> : undefined}
+      </div>
   );
 };
 

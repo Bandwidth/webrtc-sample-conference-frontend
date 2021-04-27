@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState} from "react";
 import { BrowserRouter as Router, Route } from "react-router-dom";
 import { Container, Grid } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
@@ -8,7 +8,11 @@ import Toolbar from "@material-ui/core/Toolbar";
 import Typography from "@material-ui/core/Typography";
 import IconButton from "@material-ui/core/IconButton";
 import AccountCircle from "@material-ui/icons/AccountCircle";
+import SettingsIcon from "@material-ui/icons/Settings";
 
+import { setAudioAndVideoDevice } from './services/local-devices';
+
+import Settings from "./Settings";
 import Conferences from "./Conferences";
 import Conference from "./Conference";
 import Splash from "./Splash";
@@ -41,22 +45,25 @@ const useStyles = makeStyles(theme => ({
 
 const App: React.FC = () => {
   const classes = useStyles();
+  const [settingsModalOn, setSettingsModalOn] = useState(false);
+  const handleSettingsSubmit = (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined): void => {
+    setAudioAndVideoDevice(selectedAudioDevice, selectedVideoDevice);
+    toggleSettings();
+  }
+
+  const toggleSettings = () => {
+    setSettingsModalOn(!settingsModalOn)
+  }
+
   return (
     <Grid container direction="column" className={classes.root}>
       <Router>
         <Route exact path="/">
           <div>
+            {settingsModalOn && <Settings toggleSettings={toggleSettings} onSubmit={handleSettingsSubmit} />}
             <Splash />
             <AppBar position="static" className={classes.appBar}>
               <Toolbar>
-                {/* <IconButton
-                  edge="start"
-                  className={classes.menuButton}
-                  color="inherit"
-                  aria-label="menu"
-                >
-                  <MenuIcon />
-                </IconButton> */}
                 <Typography variant="h6" className={classes.title}>
                   Bandwidth Web Conferencing
                 </Typography>
@@ -68,6 +75,17 @@ const App: React.FC = () => {
                     color="inherit"
                   >
                     <AccountCircle />
+                  </IconButton>
+                  <IconButton
+                    aria-label="settings for current user"
+                    aria-controls="menu-appbar"
+                    aria-haspopup="true"
+                    color="inherit"
+                    onClick={() => {
+                      setSettingsModalOn(true);
+                    }}
+                  >
+                    <SettingsIcon />
                   </IconButton>
                 </div>
               </Toolbar>
@@ -99,13 +117,6 @@ const App: React.FC = () => {
                   <Conference />
                 </Grid>
               }
-              // render={() => {
-              //   return (
-              //     <Grid item xs={12}>
-              //       <Conference />
-              //     </Grid>
-              //   );
-              // }}
             ></Route>
           </Grid>
         </Container>

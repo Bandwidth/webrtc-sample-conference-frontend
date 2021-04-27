@@ -8,6 +8,7 @@ import {
   VideocamOff,
   PresentToAll,
 } from "@material-ui/icons";
+import SettingsIcon from "@material-ui/icons/Settings";
 import { makeStyles } from "@material-ui/core/styles";
 import { red, green } from "@material-ui/core/colors";
 
@@ -15,6 +16,7 @@ interface CallControlProps {
   className?: string;
   isMicEnabled: boolean;
   onToggleMic?: { (): void };
+  onToggleSettings?: { (): void };
   isCameraEnabled: boolean;
   onToggleCamera?: { (): void };
   isScreenShareEnabled: boolean;
@@ -118,6 +120,14 @@ const CallControl: React.FC<CallControlProps> = (props) => {
           }
         >
           <PresentToAll />
+        </Fab>
+        <Fab
+          onClick={() => {
+            if (props.onToggleSettings) {
+              props.onToggleSettings();
+            }
+          }}>
+          <SettingsIcon />
         </Fab>
       </Box>
     </div>

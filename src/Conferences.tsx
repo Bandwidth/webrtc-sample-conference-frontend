@@ -53,7 +53,7 @@ const Conferences: React.FC = () => {
     <Paper className={classes.paper}>
       <Grid container className={classes.root} direction="column" spacing={3}>
         <Grid item>
-          <Typography variant="h6">Create a conference</Typography>
+          <Typography variant="h6">Create or Join a Conference</Typography>
         </Grid>
         <Grid container alignItems="center" spacing={2}>
           <Grid item>
@@ -80,7 +80,7 @@ const Conferences: React.FC = () => {
               onClick={createConference}
               className={classes.button}
             >
-              Create
+              Submit
             </Button>
           </Grid>
         </Grid>
