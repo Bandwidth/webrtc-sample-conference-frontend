@@ -419,8 +419,6 @@ const Conference: React.FC = (props) => {
   }
 
   const handleSettingsSubmit = async (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined) => {
-    console.log(selectedVideoDevice)
-    console.log(selectedAudioDevice)
     toggleSettings();
     try {
       setAudioAndVideoDevice(selectedAudioDevice, selectedVideoDevice);
