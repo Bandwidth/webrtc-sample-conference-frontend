@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "@bandwidth/webrtc-browser": "^0.9.2-beta.1",
+    "@bandwidth/webrtc-browser": "^0.10.0",
     "@material-ui/core": "^4.9.7",
     "@material-ui/icons": "^4.9.1",
     "@types/jest": "24.0.18",
