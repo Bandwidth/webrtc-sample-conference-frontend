@@ -18,8 +18,7 @@ import BandwidthRtc from "@bandwidth/webrtc-browser";
 
 interface SettingsProps {
     toggleSettings: { (): void };
-    onSubmit: { (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined): void };
-    bandwidthRtc?: BandwidthRtc;
+    onSubmit: { (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined, reloadApp: boolean): void }
 }
 
 const Settings: React.FC<SettingsProps> = (props) => {
@@ -120,7 +119,6 @@ const Settings: React.FC<SettingsProps> = (props) => {
         });
 
         videoStream?.getTracks().forEach(track => track.stop())
-        await props.onSubmit(selectedVideoDevice, selectedAudioDevice);
 
         if (turnServerEnable) {
 
@@ -139,10 +137,9 @@ const Settings: React.FC<SettingsProps> = (props) => {
             window.localStorage.removeItem('iceTransportPolicy');
         }
 
-        if (turnServerEnable !== turnServerLastState) {
-            await props.bandwidthRtc?.disconnect();
-            window.location.reload();
-        }
+        const reloadApp = turnServerEnable !== turnServerLastState;
+
+        await props.onSubmit(selectedVideoDevice, selectedAudioDevice, reloadApp);
     }
 
     return (
@@ -207,7 +204,7 @@ const Settings: React.FC<SettingsProps> = (props) => {
                         })
                         }
                     </Select>
-                    <Divider className={classes.dividerTheme}/>
+                    <Divider className={classes.dividerTheme} />
                     <FormGroup>
                         <FormControlLabel
                             control={<Checkbox checked={turnServerEnable}

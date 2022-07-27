@@ -424,26 +424,31 @@ const Conference: React.FC = (props) => {
     setSettingsModalOn(!settingsModalOn)
   }
 
-  const handleSettingsSubmit = async (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined) => {
-    toggleSettings();
-    try {
-      setAudioAndVideoDevice(selectedAudioDevice, selectedVideoDevice);
-      const mediaDevice = await getAudioAndVideoDevice();
+  const handleSettingsSubmit = async (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined, reloadApp: boolean) => {
+    if (reloadApp) {
+      await bandwidthRtc.disconnect();
+      window.location.reload();
+    } else {
+      toggleSettings();
       try {
-        if (localStream) {
-          await bandwidthRtc.unpublish(localStream);
+        setAudioAndVideoDevice(selectedAudioDevice, selectedVideoDevice);
+        const mediaDevice = await getAudioAndVideoDevice();
+        try {
+          if (localStream) {
+            await bandwidthRtc.unpublish(localStream);
+          }
+        } finally {
+          setLocalStream(undefined);
         }
-      } finally {
-        setLocalStream(undefined);
+        const publishResponse = await bandwidthRtc.publish(
+          mediaDevice,
+          undefined,
+          'usermedia'
+        );
+        setLocalStream(publishResponse);
+      } catch (e) {
+        console.log("Error publishing... Skipping", e);
       }
-      const publishResponse = await bandwidthRtc.publish(
-        mediaDevice,
-        undefined,
-        'usermedia'
-      );
-      setLocalStream(publishResponse);
-    } catch (e) {
-      console.log("Error publishing... Skipping", e);
     }
   }
 
@@ -452,7 +457,7 @@ const Conference: React.FC = (props) => {
       className={immersiveMode ? classes.conferenceNoCursor : classes.conference}
       onMouseMove={() => setImmersiveMode(false)}
     >
-      {settingsModalOn && <Settings bandwidthRtc={bandwidthRtc} toggleSettings={toggleSettings} onSubmit={handleSettingsSubmit} />}
+      {settingsModalOn && <Settings toggleSettings={toggleSettings} onSubmit={handleSettingsSubmit} />}
       <SessionInfo
         immersiveMode={immersiveMode}
         userAgent={userAgent}
