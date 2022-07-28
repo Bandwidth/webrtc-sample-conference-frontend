@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import Button from '@material-ui/core/Button';
 import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
@@ -12,11 +12,16 @@ import { Close } from "@material-ui/icons";
 import { makeStyles } from "@material-ui/core/styles";
 
 import { getDevicePreference, getLocalDevices } from './services/local-devices';
-import { CircularProgress, Grid } from '@material-ui/core';
+import { Checkbox, CircularProgress, Divider, FormControlLabel, FormGroup, Grid, TextField } from '@material-ui/core';
+import { getTURNConfig } from './services/turn-config';
+import { getIceTransportPolicy } from './services/ice-transport-policy';
 
 interface SettingsProps {
-    toggleSettings: { (): void};
-    onSubmit: { (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined): void };
+    toggleSettings: { (): void };
+    onSubmit: {
+        (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined,
+            turnConfig: RTCIceServer | undefined, iceTransportPolicy: RTCIceTransportPolicy | undefined): Promise<void>
+    }
 }
 
 const Settings: React.FC<SettingsProps> = (props) => {
@@ -27,10 +32,19 @@ const Settings: React.FC<SettingsProps> = (props) => {
     const [videoStream, setVideoStream] = useState<MediaStream>();
     const [loading, setLoading] = useState<boolean>(true);
 
+    const [turnServerEnable, setTurnServerEnable] = useState<boolean>(false);
+    const [turnServerURL, setTurnServerURL] = useState<string>('');
+    const [turnServerUsername, setTurnServerUsername] = useState<string>('');
+    const [turnServerCredential, setTurnServerCredential] = useState<string>('');
+    const [turnServerOnlyRelay, setTurnServerOnlyRelay] = useState<boolean>(false);
+
     const useStyles = makeStyles((theme) => ({
         videoTheme: {
             maxWidth: '300px'
-        }
+        },
+        dividerTheme: {
+            marginTop: '15px',
+        },
     }));
     const classes = useStyles()
 
@@ -57,8 +71,21 @@ const Settings: React.FC<SettingsProps> = (props) => {
             setLoading(false);
         };
         localDevices();
-        
-      }, []);
+
+        const turnConfig = getTURNConfig();
+
+        if (!!turnConfig) {
+            setTurnServerEnable(true);
+            setTurnServerURL(turnConfig.urls as string);
+            setTurnServerUsername(turnConfig.username as string);
+            setTurnServerCredential(turnConfig.credential as string);
+        }
+
+        const iceTransportPolicy = getIceTransportPolicy();
+
+        setTurnServerOnlyRelay(iceTransportPolicy === 'relay');
+
+    }, []);
 
     const closeModal = () => {
         videoStream?.getTracks().forEach(track => track.stop())
@@ -66,9 +93,9 @@ const Settings: React.FC<SettingsProps> = (props) => {
     }
 
     const getVideoStream = async (deviceId: string): Promise<MediaStream> => {
-        return await navigator.mediaDevices.getUserMedia({video: {deviceId: deviceId}, audio: false });
+        return await navigator.mediaDevices.getUserMedia({ video: { deviceId: deviceId }, audio: false });
     }
-    
+
     const handleCameraSelected = async (event: any) => {
         setLoading(true)
         videoStream?.getTracks().forEach(track => track.stop())
@@ -91,9 +118,23 @@ const Settings: React.FC<SettingsProps> = (props) => {
         const selectedAudioDevice = audioDevices?.find((device) => {
             return device.deviceId === selectedMic
         });
- 
+
         videoStream?.getTracks().forEach(track => track.stop())
-        await props.onSubmit(selectedVideoDevice, selectedAudioDevice);
+
+        let turnConfig: any = undefined;
+        let iceTransportPolicy: any = undefined;
+        if (turnServerEnable) {
+
+            turnConfig = {
+                urls: turnServerURL,
+                username: turnServerUsername,
+                credential: turnServerCredential
+            } as RTCIceServer;
+
+            iceTransportPolicy = (turnServerOnlyRelay ? 'relay' : 'all') as RTCIceTransportPolicy;
+        }
+
+        await props.onSubmit(selectedVideoDevice, selectedAudioDevice, turnConfig, iceTransportPolicy);
     }
 
     return (
@@ -101,19 +142,19 @@ const Settings: React.FC<SettingsProps> = (props) => {
             <Dialog open={true} aria-labelledby="form-dialog-title">
                 <DialogTitle id="form-dialog-title">
                     <Grid
-                    container
-                    direction="row"
-                    justify="space-between"
-                    alignItems="center">
-                    Settings
-                    <Button size="small" onClick={closeModal}><Close></Close></Button>
+                        container
+                        direction="row"
+                        justify="space-between"
+                        alignItems="center">
+                        Settings
+                        <Button size="small" onClick={closeModal}><Close></Close></Button>
                     </Grid>
                 </DialogTitle>
                 <DialogContent>
                     <DialogContentText>
                         Please select video and audio input devices
                     </DialogContentText>
-                    {loading && 
+                    {loading &&
                         <CircularProgress />
                     }
                     {!loading &&
@@ -139,8 +180,8 @@ const Settings: React.FC<SettingsProps> = (props) => {
                             <em>Select a default camera</em>
                         </MenuItem>
                         {videoDevices?.map((camera) => {
-                                return <MenuItem key={camera.deviceId} value={camera.deviceId}>{camera.label}</MenuItem>
-                            })
+                            return <MenuItem key={camera.deviceId} value={camera.deviceId}>{camera.label}</MenuItem>
+                        })
                         }
                     </Select>
                     <InputLabel id="settings-mic-select-input-label">Microphone</InputLabel>
@@ -158,6 +199,36 @@ const Settings: React.FC<SettingsProps> = (props) => {
                         })
                         }
                     </Select>
+                    <Divider className={classes.dividerTheme} />
+                    <FormGroup>
+                        <FormControlLabel
+                            control={<Checkbox checked={turnServerEnable}
+                                onChange={(e) => { setTurnServerEnable(prev => { return !prev }) }} />
+                            }
+                            label="Enable TURN server" />
+                        <TextField id="url"
+                            value={turnServerURL}
+                            onChange={(e) => { setTurnServerURL(e.target.value) }}
+                            disabled={!turnServerEnable}
+                            label="URL" defaultValue="turns:domain.com:12345" />
+                        <TextField id="username"
+                            value={turnServerUsername}
+                            onChange={(e) => { setTurnServerUsername(e.target.value) }}
+                            disabled={!turnServerEnable}
+                            label="Username" defaultValue="test" />
+                        <TextField id="credential"
+                            type="password"
+                            value={turnServerCredential}
+                            onChange={(e) => { setTurnServerCredential(e.target.value) }}
+                            disabled={!turnServerEnable}
+                            label="Credential" defaultValue="test123" />
+                        <FormControlLabel
+                            disabled={!turnServerEnable}
+                            control={<Checkbox checked={turnServerOnlyRelay}
+                                onChange={(e) => { setTurnServerOnlyRelay(prev => { return !prev }) }} />
+                            }
+                            label="Force the TURN server utilization?" />
+                    </FormGroup>
                 </DialogContent>
                 <DialogActions>
                     <Button color="primary" onClick={handleClose}>
