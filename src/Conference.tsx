@@ -429,7 +429,7 @@ const Conference: React.FC = (props) => {
   }
 
   const handleSettingsSubmit = async (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined,
-    turnConfig: RTCIceServer | undefined, iceTransportPolicy: RTCIceTransportPolicy | undefined) => {
+    turnConfig: RTCIceServer | undefined, iceTransportPolicy: RTCIceTransportPolicy | undefined): Promise<void> => {
 
     const reloadApp = !isEquals(turnConfig, getTURNConfig()) || !isEquals(iceTransportPolicy, getIceTransportPolicy());
 

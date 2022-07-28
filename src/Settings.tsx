@@ -20,7 +20,7 @@ interface SettingsProps {
     toggleSettings: { (): void };
     onSubmit: {
         (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined,
-            turnConfig: RTCIceServer | undefined, iceTransportPolicy: RTCIceTransportPolicy | undefined): void
+            turnConfig: RTCIceServer | undefined, iceTransportPolicy: RTCIceTransportPolicy | undefined): Promise<void>
     }
 }
 
@@ -121,7 +121,8 @@ const Settings: React.FC<SettingsProps> = (props) => {
 
         videoStream?.getTracks().forEach(track => track.stop())
 
-        let turnConfig = undefined;
+        let turnConfig: any = undefined;
+        let iceTransportPolicy: any = undefined;
         if (turnServerEnable) {
 
             turnConfig = {
@@ -130,8 +131,8 @@ const Settings: React.FC<SettingsProps> = (props) => {
                 credential: turnServerCredential
             } as RTCIceServer;
 
+            iceTransportPolicy = (turnServerOnlyRelay ? 'relay' : 'all') as RTCIceTransportPolicy;
         }
-        const iceTransportPolicy = (turnServerOnlyRelay ? 'relay' : 'all') as RTCIceTransportPolicy;
 
         await props.onSubmit(selectedVideoDevice, selectedAudioDevice, turnConfig, iceTransportPolicy);
     }

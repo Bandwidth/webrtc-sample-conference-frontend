@@ -46,7 +46,7 @@ const useStyles = makeStyles(theme => ({
 const App: React.FC = () => {
   const classes = useStyles();
   const [settingsModalOn, setSettingsModalOn] = useState(false);
-  const handleSettingsSubmit = (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined): void => {
+  const handleSettingsSubmit = async (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined): Promise<void> => {
     setAudioAndVideoDevice(selectedAudioDevice, selectedVideoDevice);
     toggleSettings();
   }
