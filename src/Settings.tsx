@@ -216,6 +216,7 @@ const Settings: React.FC<SettingsProps> = (props) => {
                             disabled={!turnServerEnable}
                             label="Username" defaultValue="test" />
                         <TextField id="credential"
+                            type="password"
                             value={turnServerCredential}
                             onChange={(e) => { setTurnServerCredential(e.target.value) }}
                             disabled={!turnServerEnable}

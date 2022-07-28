@@ -440,7 +440,7 @@ const Conference: React.FC = (props) => {
     setTURNConfig(turnConfig);
 
     if (reloadApp) {
-      await bandwidthRtc.disconnect();
+      bandwidthRtc.disconnect();
       window.location.reload();
     } else {
 
