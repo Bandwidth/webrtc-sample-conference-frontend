@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import { BrowserRouter as Router, Route } from "react-router-dom";
 import { Container, Grid } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
@@ -16,6 +16,8 @@ import Settings from "./Settings";
 import Conferences from "./Conferences";
 import Conference from "./Conference";
 import Splash from "./Splash";
+import { setIceTransportPolicy } from "./services/ice-transport-policy";
+import { setTURNConfig } from "./services/turn-config";
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -46,8 +48,14 @@ const useStyles = makeStyles(theme => ({
 const App: React.FC = () => {
   const classes = useStyles();
   const [settingsModalOn, setSettingsModalOn] = useState(false);
-  const handleSettingsSubmit = async (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined): Promise<void> => {
+  const handleSettingsSubmit = async (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined,
+    turnConfig: RTCIceServer | undefined, iceTransportPolicy: RTCIceTransportPolicy | undefined): Promise<void> => {
+
     setAudioAndVideoDevice(selectedAudioDevice, selectedVideoDevice);
+    console.log(`Setting IceTransportPolicy: ${iceTransportPolicy}`);
+    setIceTransportPolicy(iceTransportPolicy);
+    console.log(`Setting TURN server: ${JSON.stringify(turnConfig)}`);
+    setTURNConfig(turnConfig);
     toggleSettings();
   }
 

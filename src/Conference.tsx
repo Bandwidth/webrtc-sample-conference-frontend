@@ -435,7 +435,7 @@ const Conference: React.FC = (props) => {
     setAudioAndVideoDevice(selectedAudioDevice, selectedVideoDevice);
     console.log(`Setting IceTransportPolicy: ${iceTransportPolicy}`);
     setIceTransportPolicy(iceTransportPolicy);
-    console.log(`Setting TURN server: ${turnConfig}`);
+    console.log(`Setting TURN server: ${JSON.stringify(turnConfig)}`);
     setTURNConfig(turnConfig);
 
     if (reloadApp) {
