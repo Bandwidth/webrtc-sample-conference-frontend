@@ -443,7 +443,7 @@ const Conference: React.FC = (props) => {
       bandwidthRtc.disconnect();
       window.location.reload();
     } else {
-
+      toggleSettings();
       try {
         const mediaDevice = await getAudioAndVideoDevice();
         try {
