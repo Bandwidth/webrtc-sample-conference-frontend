@@ -13,12 +13,15 @@ import { makeStyles } from "@material-ui/core/styles";
 
 import { getDevicePreference, getLocalDevices } from './services/local-devices';
 import { Checkbox, CircularProgress, Divider, FormControlLabel, FormGroup, Grid, TextField } from '@material-ui/core';
-import logger from '@bandwidth/webrtc-browser/dist/logging';
-import BandwidthRtc from "@bandwidth/webrtc-browser";
+import { getTURNConfig } from './services/turn-config';
+import { getIceTransportPolicy } from './services/ice-transport-policy';
 
 interface SettingsProps {
     toggleSettings: { (): void };
-    onSubmit: { (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined, reloadApp: boolean): void }
+    onSubmit: {
+        (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined,
+            turnConfig: RTCIceServer | undefined, iceTransportPolicy: RTCIceTransportPolicy | undefined): void
+    }
 }
 
 const Settings: React.FC<SettingsProps> = (props) => {
@@ -29,7 +32,6 @@ const Settings: React.FC<SettingsProps> = (props) => {
     const [videoStream, setVideoStream] = useState<MediaStream>();
     const [loading, setLoading] = useState<boolean>(true);
 
-    const [turnServerLastState, setTurnServerLastState] = useState<boolean>(false);
     const [turnServerEnable, setTurnServerEnable] = useState<boolean>(false);
     const [turnServerURL, setTurnServerURL] = useState<string>('');
     const [turnServerUsername, setTurnServerUsername] = useState<string>('');
@@ -70,19 +72,18 @@ const Settings: React.FC<SettingsProps> = (props) => {
         };
         localDevices();
 
-        const turnServerValue = window.localStorage.getItem("turnServer");
+        const turnConfig = getTURNConfig();
 
-        if (!!turnServerValue) {
-            const turnServer = JSON.parse(turnServerValue) as RTCIceServer;
-            const iceTransportPolicy = window.localStorage.getItem('iceTransportPolicy') as RTCIceTransportPolicy;
-
-            setTurnServerLastState(true);
+        if (!!turnConfig) {
             setTurnServerEnable(true);
-            setTurnServerURL(turnServer.urls as string);
-            setTurnServerUsername(turnServer.username as string);
-            setTurnServerCredential(turnServer.credential as string);
-            setTurnServerOnlyRelay(iceTransportPolicy === 'relay');
+            setTurnServerURL(turnConfig.urls as string);
+            setTurnServerUsername(turnConfig.username as string);
+            setTurnServerCredential(turnConfig.credential as string);
         }
+
+        const iceTransportPolicy = getIceTransportPolicy();
+
+        setTurnServerOnlyRelay(iceTransportPolicy === 'relay');
 
     }, []);
 
@@ -120,26 +121,19 @@ const Settings: React.FC<SettingsProps> = (props) => {
 
         videoStream?.getTracks().forEach(track => track.stop())
 
+        let turnConfig = undefined;
         if (turnServerEnable) {
 
-            const turnServerConfig: RTCIceServer = {
+            turnConfig = {
                 urls: turnServerURL,
                 username: turnServerUsername,
                 credential: turnServerCredential
-            }
+            } as RTCIceServer;
 
-            window.localStorage.setItem('turnServer', JSON.stringify(turnServerConfig));
-            window.localStorage.setItem('iceTransportPolicy', turnServerOnlyRelay ? 'relay' : 'all')
-
-            logger.debug(`Setting TURN server: ${turnServerConfig}`);
-        } else {
-            window.localStorage.removeItem('turnServer');
-            window.localStorage.removeItem('iceTransportPolicy');
         }
+        const iceTransportPolicy = (turnServerOnlyRelay ? 'relay' : 'all') as RTCIceTransportPolicy;
 
-        const reloadApp = turnServerEnable !== turnServerLastState;
-
-        await props.onSubmit(selectedVideoDevice, selectedAudioDevice, reloadApp);
+        await props.onSubmit(selectedVideoDevice, selectedAudioDevice, turnConfig, iceTransportPolicy);
     }
 
     return (
@@ -231,7 +225,7 @@ const Settings: React.FC<SettingsProps> = (props) => {
                             control={<Checkbox checked={turnServerOnlyRelay}
                                 onChange={(e) => { setTurnServerOnlyRelay(prev => { return !prev }) }} />
                             }
-                            label="Only relay?" />
+                            label="Force the TURN server utilization?" />
                     </FormGroup>
                 </DialogContent>
                 <DialogActions>

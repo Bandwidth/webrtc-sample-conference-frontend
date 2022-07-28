@@ -16,6 +16,10 @@ import Settings from "./Settings";
 import Welcome from "./Welcome";
 import Participant from "./Participant";
 import { red } from "@material-ui/core/colors";
+import { getTURNConfig, setTURNConfig } from "./services/turn-config";
+import { getIceTransportPolicy, setIceTransportPolicy } from "./services/ice-transport-policy";
+import { isEquals } from "./Utils";
+import logger from "@bandwidth/webrtc-browser/dist/logging";
 
 const bandwidthRtc = new BandwidthRtc("debug");
 
@@ -343,10 +347,10 @@ const Conference: React.FC = (props) => {
           if (responseBody.websocketUrl) {
             options.websocketUrl = responseBody.websocketUrl;
           }
-          const turnServerConfig = window.localStorage.getItem('turnServer');
+          const turnServerConfig = getTURNConfig();
           if (!!turnServerConfig) {
-            options.iceServers = [JSON.parse(turnServerConfig)] as RTCIceServer[];
-            options.iceTransportPolicy = (window.localStorage.getItem('iceTransportPolicy') || 'all') as RTCIceTransportPolicy;
+            options.iceServers = [turnServerConfig];
+            options.iceTransportPolicy = getIceTransportPolicy();
           }
 
           await bandwidthRtc.connect(
@@ -424,12 +428,22 @@ const Conference: React.FC = (props) => {
     setSettingsModalOn(!settingsModalOn)
   }
 
-  const handleSettingsSubmit = async (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined, reloadApp: boolean) => {
+  const handleSettingsSubmit = async (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined,
+    turnConfig: RTCIceServer | undefined, iceTransportPolicy: RTCIceTransportPolicy | undefined) => {
+
+    const reloadApp = !isEquals(turnConfig, getTURNConfig()) || !isEquals(iceTransportPolicy, getIceTransportPolicy());
+
+    setAudioAndVideoDevice(selectedAudioDevice, selectedVideoDevice);
+    logger.debug(`Setting IceTransportPolicy: ${iceTransportPolicy}`);
+    setIceTransportPolicy(iceTransportPolicy);
+    logger.debug(`Setting TURN server: ${turnConfig}`);
+    setTURNConfig(turnConfig);
+
     if (reloadApp) {
       await bandwidthRtc.disconnect();
       window.location.reload();
     } else {
-      toggleSettings();
+
       try {
         setAudioAndVideoDevice(selectedAudioDevice, selectedVideoDevice);
         const mediaDevice = await getAudioAndVideoDevice();

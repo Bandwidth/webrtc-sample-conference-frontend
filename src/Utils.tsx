@@ -27,3 +27,8 @@ const getIntHashFromString = function(input: string) {
   }
   return hash;
 };
+
+
+export const isEquals = (obj1: any, obj2:any): boolean => {
+  return JSON.stringify(obj1) === JSON.stringify(obj2);
+}
