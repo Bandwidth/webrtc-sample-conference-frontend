@@ -445,7 +445,6 @@ const Conference: React.FC = (props) => {
     } else {
 
       try {
-        setAudioAndVideoDevice(selectedAudioDevice, selectedVideoDevice);
         const mediaDevice = await getAudioAndVideoDevice();
         try {
           if (localStream) {
