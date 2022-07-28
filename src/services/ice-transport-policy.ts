@@ -1,10 +1,10 @@
 /**
  * Stores information about the user's ICE Transport Policy preferences
  */
- 
+
 const setIceTransportPolicy = (iceTransportPolicy: RTCIceTransportPolicy | undefined) => {
   if (!iceTransportPolicy) {
-      localStorage.removeItem('iceTransportPolicy');
+    localStorage.removeItem('iceTransportPolicy');
     return;
   }
   localStorage.setItem('iceTransportPolicy', iceTransportPolicy);
@@ -19,4 +19,4 @@ const getIceTransportPolicy = (): RTCIceTransportPolicy | undefined => {
   }
 }
 
-export { setIceTransportPolicy, getIceTransportPolicy};
+export { setIceTransportPolicy, getIceTransportPolicy };

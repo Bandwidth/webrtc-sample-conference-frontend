@@ -19,4 +19,4 @@ const getTURNConfig = (): RTCIceServer | undefined => {
   }
 }
 
-export { setTURNConfig, getTURNConfig};
+export { setTURNConfig, getTURNConfig };

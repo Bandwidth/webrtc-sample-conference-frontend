@@ -19,7 +19,6 @@ import { red } from "@material-ui/core/colors";
 import { getTURNConfig, setTURNConfig } from "./services/turn-config";
 import { getIceTransportPolicy, setIceTransportPolicy } from "./services/ice-transport-policy";
 import { isEquals } from "./Utils";
-import logger from "@bandwidth/webrtc-browser/dist/logging";
 
 const bandwidthRtc = new BandwidthRtc("debug");
 
@@ -425,21 +424,22 @@ const Conference: React.FC = (props) => {
   }, [immersiveMode]);
 
   const toggleSettings = () => {
-    setSettingsModalOn(!settingsModalOn)
+    setSettingsModalOn(prev => !prev)
   }
 
   const handleSettingsSubmit = async (selectedVideoDevice: MediaDeviceInfo | undefined, selectedAudioDevice: MediaDeviceInfo | undefined,
     turnConfig: RTCIceServer | undefined, iceTransportPolicy: RTCIceTransportPolicy | undefined): Promise<void> => {
 
-    const reloadApp = !isEquals(turnConfig, getTURNConfig()) || !isEquals(iceTransportPolicy, getIceTransportPolicy());
+    const reloadApp = !isEquals(turnConfig, getTURNConfig()) || !isEquals(iceTransportPolicy || 'all', getIceTransportPolicy());
 
     setAudioAndVideoDevice(selectedAudioDevice, selectedVideoDevice);
-    logger.debug(`Setting IceTransportPolicy: ${iceTransportPolicy}`);
+    console.log(`Setting IceTransportPolicy: ${iceTransportPolicy}`);
     setIceTransportPolicy(iceTransportPolicy);
-    logger.debug(`Setting TURN server: ${turnConfig}`);
+    console.log(`Setting TURN server: ${turnConfig}`);
     setTURNConfig(turnConfig);
 
     if (reloadApp) {
+      console.log(`Reloading application`);
       bandwidthRtc.disconnect();
       window.location.reload();
     } else {
