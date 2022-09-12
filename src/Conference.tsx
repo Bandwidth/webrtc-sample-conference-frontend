@@ -289,6 +289,11 @@ const Conference: React.FC = (props) => {
           const screenShareStream = await bandwidthRtc.publish(stream, undefined, 'screenshare');
           setScreenShareStream(screenShareStream);
           console.log("published screenshare", screenShareStream);
+
+          stream.getVideoTracks()[0].onended = () => {
+            setScreenShareEnabled(false);
+          }
+
         })
         .catch((e: Error) => {
           console.error(e);
